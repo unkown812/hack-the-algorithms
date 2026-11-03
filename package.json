@@ -4,6 +4,7 @@
   "description": "Hack the Algorithms in your own way",
   "version": "0.0.1",
   "author": "ukown812",
+  "publisher": "ukown812",
   "repository": {
     "type": "git",
     "url": "https://github.com/ukown812/hack-the-algorithms.git"
