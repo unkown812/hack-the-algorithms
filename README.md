@@ -1,8 +1,77 @@
-# Design and Analysis of Algorithms (DAA) Practicals
+# DAA Learning Companion
 
-**Language:** C
+An interactive algorithm learning and visualization extension for Visual Studio Code.
+
+**Programming Language:** C (primary), with visualization support for multiple algorithms  
+**Subject:** Design and Analysis of Algorithms (DAA)
+
+## Overview
+
+DAA Learning Companion helps students understand, visualize, implement, and analyze algorithms directly inside Visual Studio Code.
+
+**Core Philosophy:** Learn → Understand → Visualize → Implement → Analyze → Practice.
+
+### Phase 1 Features (Complete)
+
+- VS Code extension architecture (host + webview)
+- Interactive dashboard with welcome section, quick actions, algorithm categories, and learning statistics
+- Algorithm library with search and filtering
+- Algorithm information pages (theory, problem statement, approach, pseudocode, complexity analysis)
+- Algorithm Explorer view in the activity bar
+
+### Phase 2 Features (Complete)
+
+- **Reusable visualization engine** with deterministic execution traces
+- **Step-by-step algorithm tracing** — observe how data changes during execution
+- **Interactive playback controls** — play, pause, next step, previous step, restart, jump to beginning/end, adjustable speed (0.25x–4x)
+- **Sorting algorithm visualizations**: Bubble Sort, Selection Sort, Insertion Sort, Merge Sort, Quick Sort
+- **Searching algorithm visualizations**: Linear Search, Binary Search
+- **Array renderer** (SVG bars with state highlighting: comparing, swapping, sorted, found, eliminated)
+- **Input configuration playground** (manual, random, predefined examples)
+- **Execution explanation panel** — human-readable description of each operation
+- **Variable inspector** — watch variables update in real time
+- **Complexity indicators** — observed operation counts vs theoretical Big-O
+- **Pseudocode synchronization** — current line highlighted as execution progresses
+- **Input validation** with meaningful error messages
+
+### Visualization Demo
+
+Open an algorithm's detail page and click **Visualize Algorithm** to launch the interactive workspace. Configure your input, then step through the execution to see exactly how the algorithm operates.
+
+### Phase 4 Features (Complete)
+
+- **Complexity analyzer** — theoretical classes with explicit derivations, assumptions and the matching code sections
+- **Instrumented operation counting** — real counts (comparisons, swaps, array reads/writes, assignments, loop iterations, recursive and function calls) produced by an implementation that mirrors the C code statement for statement; the counting convention of every algorithm is documented and shown in the UI
+- **Space analysis** — theoretical class, estimated bytes and measured allocations / peak bytes / recursion depth kept strictly apart
+- **Performance lab** — benchmarks with warm-up runs, repeated trials on the identical dataset, output validation, cancellation, timeouts and per-algorithm input limits
+- **Growth visualisation** — measured operation counts per input size, with an optional logarithmic scale
+- **Algorithm comparison lab** — several algorithms on one dataset with validated outputs and an explicit warning when algorithms from different families are selected
+- **Explanation engine** — plain-language observations that connect the counted numbers to the theory
+- **Complexity reports** — Markdown, CSV and JSON export with methodology and data-classification labels, saved through a native VS Code dialog
+- **Learning content** — 12 time-complexity topics, 6 space-complexity topics and a notation reference, each with key points and C examples
+
+#### Data classification
+
+Every number carries its class, and the classes are never merged:
+
+| Class | Meaning |
+|-------|---------|
+| **THEORETICAL** | Reviewed Big-O metadata and derivations |
+| **INSTRUMENTED** | Operation counts from the instrumented engine |
+| **ESTIMATED** | Model-based byte/stack approximations |
+| **MEASURED** | Timings recorded during an actual benchmark run |
+
+> Benchmark timings describe the instrumented TypeScript execution inside the extension renderer — they are **not** native C compiler output. Operation counts are never estimated from Big-O: they are counted while the algorithm runs.
+
+See [`docs/PHASE4.md`](docs/PHASE4.md) for the full design and the exact counting conventions.
+
+---
+
+## C DAA Practicals
+
+The following C implementations are included as practical reference material.
+
 **Compiler:** GCC
-**Subject:** Design and Analysis of Algorithms
 
 ---
 
@@ -10,7 +79,22 @@
 
 ### Theory
 
-Binary Search is a searching algorithm that works on a sorted array. It repeatedly divides the search interval into two halves and compares the middle element with the target element.
+Binary Search is a searching algorithm that works on a sorted array. It repeatedly divides the search interval into two halves until the required element is found or the search interval becomes empty.
+
+### Algorithm
+
+1. Start.
+2. Read the number of elements and sorted array.
+3. Read the element to be searched.
+4. Initialize `low = 0` and `high = n - 1`.
+5. Repeat while `low <= high`:
+
+   * Calculate `mid = (low + high) / 2`.
+   * If `a[mid] == key`, display its position and stop.
+   * If `a[mid] < key`, set `low = mid + 1`.
+   * Otherwise, set `high = mid - 1`.
+6. If the element is not found, display a message.
+7. Stop.
 
 ### Code
 
@@ -62,7 +146,7 @@ int main() {
 
 ### Conclusion
 
-Binary Search efficiently searches elements in a sorted array by repeatedly reducing the search space by half.
+Binary Search efficiently searches for an element in a sorted array by repeatedly dividing the search space into two halves.
 
 ---
 
@@ -70,7 +154,23 @@ Binary Search efficiently searches elements in a sorted array by repeatedly redu
 
 ### Theory
 
-Insertion Sort is a comparison-based sorting algorithm that builds the sorted array one element at a time. Each element is inserted into its correct position in the already sorted portion.
+Insertion Sort is a comparison-based sorting algorithm that builds a sorted array one element at a time. Each element is inserted into its correct position in the already sorted portion.
+
+### Algorithm
+
+1. Start.
+2. Read the number of elements and array.
+3. Repeat for `i = 1` to `n - 1`:
+
+   * Set `key = a[i]`.
+   * Set `j = i - 1`.
+   * While `j >= 0` and `a[j] > key`:
+
+     * Move `a[j]` one position right.
+     * Decrement `j`.
+   * Insert `key` at `a[j + 1]`.
+4. Display the sorted array.
+5. Stop.
 
 ### Code
 
@@ -126,7 +226,29 @@ Insertion Sort arranges elements in ascending order by inserting each element in
 
 ### Theory
 
-Kruskal's Algorithm is a greedy algorithm used to find the Minimum Spanning Tree (MST) of a connected, weighted, undirected graph. It selects edges in increasing order of weight while avoiding cycles using the Disjoint Set (Union-Find) method.
+Kruskal's Algorithm is a greedy algorithm used to find the Minimum Spanning Tree (MST) of a connected, weighted, undirected graph. It selects edges in increasing order of weight while avoiding cycles using the Disjoint Set method.
+
+### Algorithm
+
+1. Start.
+2. Read the number of vertices and edges.
+3. Read all edges with their weights.
+4. Sort all edges in increasing order of weight.
+5. Initialize each vertex as a separate set.
+6. Set `cost = 0` and `count = 0`.
+7. Traverse the sorted edges:
+
+   * Find the parent of both endpoints.
+   * If their parents are different:
+
+     * Include the edge in MST.
+     * Merge their sets.
+     * Add its weight to the total cost.
+     * Increment `count`.
+   * Stop when `count = V - 1`.
+8. If fewer than `V - 1` edges are selected, display that MST is not possible.
+9. Otherwise, display the minimum cost.
+10. Stop.
 
 ### Code
 
@@ -194,12 +316,12 @@ int main() {
 
 ### Complexities
 
-* **Time Complexity:** O(E² + Eα(V)) with the simple bubble sort and Union-Find implementation.
+* **Time Complexity:** O(E² + Eα(V)) using bubble sort and simple Union-Find.
 * **Space Complexity:** O(V + E)
 
 ### Conclusion
 
-Kruskal's Algorithm finds the Minimum Spanning Tree by selecting the minimum-weight edges without forming cycles.
+Kruskal's Algorithm constructs a Minimum Spanning Tree by selecting minimum-weight edges without creating cycles.
 
 ---
 
@@ -207,7 +329,29 @@ Kruskal's Algorithm finds the Minimum Spanning Tree by selecting the minimum-wei
 
 ### Theory
 
-The Fractional Knapsack Problem is solved using a greedy approach. Items are selected according to their profit-to-weight ratio in descending order. Fractions of items can be selected to maximize the total profit.
+The Fractional Knapsack Problem is solved using a greedy approach. Items are selected according to their profit-to-weight ratio in descending order. Fractions of items can also be selected to maximize total profit.
+
+### Algorithm
+
+1. Start.
+2. Read the number of items.
+3. Read the profit and weight of each item.
+4. Calculate the profit-to-weight ratio for every item.
+5. Sort items in descending order of their ratios.
+6. Read the knapsack capacity.
+7. Set `profit = 0`.
+8. Traverse the sorted items:
+
+   * If the item weight is less than or equal to the remaining capacity:
+
+     * Add its complete profit.
+     * Reduce the remaining capacity.
+   * Otherwise:
+
+     * Add fractional profit according to the remaining capacity.
+     * Set capacity to zero.
+9. Display maximum profit.
+10. Stop.
 
 ### Code
 
@@ -271,7 +415,7 @@ int main() {
 
 ### Conclusion
 
-The Greedy Method provides the maximum profit for the Fractional Knapsack Problem by selecting items according to their profit-to-weight ratio.
+The Greedy Method maximizes profit in the Fractional Knapsack Problem by selecting items according to their profit-to-weight ratio.
 
 ---
 
@@ -279,9 +423,39 @@ The Greedy Method provides the maximum profit for the Fractional Knapsack Proble
 
 ### Theory
 
-Divide and Conquer divides an array into smaller subarrays, finds their minimum and maximum elements recursively, and combines the results.
+Divide and Conquer divides an array into smaller subarrays, finds their minimum and maximum recursively, and combines the results.
 
-The traditional method scans the array once to find both minimum and maximum values. Divide and Conquer reduces the number of comparisons compared with checking every element separately for both values.
+The traditional method scans the array once to find both minimum and maximum values. Divide and Conquer requires approximately 3n/2 comparisons, whereas the traditional method requires up to 2n - 2 comparisons.
+
+### Algorithm
+
+**Divide and Conquer:**
+
+1. Start.
+2. Read the number of elements and array.
+3. If the subarray contains one element:
+
+   * Set minimum and maximum to that element.
+4. If the subarray contains two elements:
+
+   * Compare them and assign minimum and maximum.
+5. Otherwise:
+
+   * Divide the array into two halves.
+   * Recursively find minimum and maximum of both halves.
+   * Compare both minimum values.
+   * Compare both maximum values.
+6. Return the final minimum and maximum.
+7. Display the results.
+8. Stop.
+
+**Traditional Method:**
+
+1. Set minimum and maximum to the first element.
+2. Traverse the remaining array.
+3. If the current element is smaller, update minimum.
+4. If the current element is greater, update maximum.
+5. Display minimum and maximum.
 
 ### Code
 
@@ -356,7 +530,7 @@ int main() {
 **Divide and Conquer:**
 
 * Time Complexity: O(n)
-* Space Complexity: O(log n) for recursion stack.
+* Space Complexity: O(log n)
 
 **Traditional Method:**
 
@@ -365,7 +539,7 @@ int main() {
 
 ### Conclusion
 
-Both methods find the minimum and maximum in linear time. Divide and Conquer uses fewer comparisons (approximately 3n/2), while the traditional method is simpler and requires constant auxiliary space.
+Both methods find minimum and maximum in linear time. Divide and Conquer reduces comparisons, while the traditional method uses less auxiliary space.
 
 ---
 
@@ -373,9 +547,23 @@ Both methods find the minimum and maximum in linear time. Divide and Conquer use
 
 ### Theory
 
-Floyd-Warshall is a Dynamic Programming algorithm used to find the shortest paths between all pairs of vertices in a weighted graph. It repeatedly considers each vertex as an intermediate vertex to improve the shortest path distances.
+Floyd-Warshall is a Dynamic Programming algorithm used to find the shortest paths between all pairs of vertices in a weighted graph. It considers every vertex as an intermediate vertex and updates the shortest distances.
 
-Use INF to represent the absence of an edge.
+### Algorithm
+
+1. Start.
+2. Read the number of vertices.
+3. Read the adjacency matrix.
+4. Set infinity for pairs without a direct edge.
+5. Repeat for every intermediate vertex `k`:
+
+   * Repeat for every source vertex `i`.
+   * Repeat for every destination vertex `j`.
+   * If the path through `k` is shorter than the existing path:
+
+     * Update `dist[i][j]`.
+6. Display the shortest distance matrix.
+7. Stop.
 
 ### Code
 
@@ -422,7 +610,7 @@ int main() {
 
 ### Conclusion
 
-Floyd-Warshall successfully calculates the shortest distances between every pair of vertices using Dynamic Programming.
+Floyd-Warshall calculates the shortest distances between all pairs of vertices using Dynamic Programming.
 
 ---
 
@@ -431,6 +619,24 @@ Floyd-Warshall successfully calculates the shortest distances between every pair
 ### Theory
 
 Bellman-Ford is a shortest-path algorithm that calculates the minimum distance from a single source vertex to all other vertices. It supports negative edge weights and detects negative-weight cycles.
+
+### Algorithm
+
+1. Start.
+2. Read the number of vertices and edges.
+3. Read all edges with their weights.
+4. Read the source vertex.
+5. Initialize the distance of all vertices to infinity.
+6. Set the source distance to zero.
+7. Repeat `V - 1` times:
+
+   * Traverse all edges.
+   * If a shorter path is found, update the distance.
+8. Traverse all edges once more:
+
+   * If any distance can still be reduced, report a negative-weight cycle.
+9. Otherwise, display shortest distances.
+10. Stop.
 
 ### Code
 
@@ -515,6 +721,23 @@ Bellman-Ford finds single-source shortest paths, supports negative edge weights,
 
 The 8-Queens Problem involves placing eight queens on an 8×8 chessboard so that no two queens attack each other. Backtracking places queens row by row and rejects positions that cause conflicts.
 
+### Algorithm
+
+1. Start.
+2. Initialize an empty chessboard.
+3. Place a queen in the first row.
+4. Check each column for a safe position.
+5. If the position is safe:
+
+   * Place the queen.
+   * Move to the next row recursively.
+6. If all eight queens are placed, display the solution.
+7. If no safe position exists:
+
+   * Remove the previously placed queen.
+   * Try another position.
+8. Stop when a solution is found.
+
 ### Code
 
 ```c
@@ -582,11 +805,11 @@ int main() {
 ### Complexities
 
 * **Time Complexity:** O(N!) upper bound.
-* **Space Complexity:** O(N) for the board and recursion stack.
+* **Space Complexity:** O(N)
 
 ### Conclusion
 
-Backtracking successfully solves the 8-Queens Problem by placing queens safely and rejecting invalid arrangements.
+Backtracking successfully solves the 8-Queens Problem by placing queens in safe positions and rejecting invalid arrangements.
 
 ---
 
@@ -594,9 +817,27 @@ Backtracking successfully solves the 8-Queens Problem by placing queens safely a
 
 ### Theory
 
-The 15-Puzzle consists of a 4×4 board containing 15 numbered tiles and one empty space (0). The objective is to arrange the tiles in ascending order.
+The 15-Puzzle consists of a 4×4 board containing 15 numbered tiles and one empty space represented by zero. The objective is to arrange the tiles in ascending order.
 
-Branch and Bound explores possible board configurations using a cost function. The Manhattan Distance heuristic estimates the remaining cost, and the configuration with the lowest estimated total cost is explored first.
+Branch and Bound explores possible board configurations using a cost function. Manhattan Distance estimates the remaining cost, and the configuration with the lowest estimated total cost is explored first.
+
+### Algorithm
+
+1. Start.
+2. Read the 4×4 puzzle matrix.
+3. Identify the blank position (0).
+4. Calculate Manhattan Distance for the initial state.
+5. Insert the initial state into the priority queue.
+6. Repeat while the queue is not empty:
+
+   * Remove the state with the minimum cost `f(n) = g(n) + h(n)`.
+   * If the state matches the goal, display the solution path and stop.
+   * Generate valid neighboring states by moving the blank up, down, left, or right.
+   * Ignore already visited states.
+   * Calculate the cost of each new state.
+   * Insert new states into the priority queue.
+7. If the queue becomes empty, display no solution.
+8. Stop.
 
 ### Code
 
@@ -618,13 +859,6 @@ typedef struct Seen {
 
 Seen *visited = NULL;
 Node *open = NULL;
-
-int goal[16] = {
-    1, 2, 3, 4,
-    5, 6, 7, 8,
-    9, 10, 11, 12,
-    13, 14, 15, 0
-};
 
 int heuristic(int a[]) {
     int i, h = 0;
@@ -733,6 +967,7 @@ int main() {
             nb = b + moves[i];
 
             if(nb < 0 || nb >= 16) continue;
+
             if((i == 2 || i == 3) && b / 4 != nb / 4)
                 continue;
 
@@ -775,7 +1010,7 @@ int main() {
 
 ### Conclusion
 
-Branch and Bound solves the 15-Puzzle by exploring configurations with the lowest estimated cost using Manhattan Distance as a heuristic.
+Branch and Bound solves the 15-Puzzle by exploring configurations with minimum estimated cost using Manhattan Distance as a heuristic.
 
 ---
 
@@ -784,6 +1019,22 @@ Branch and Bound solves the 15-Puzzle by exploring configurations with the lowes
 ### Theory
 
 Rabin-Karp is a string-matching algorithm that uses hashing to find occurrences of a pattern within a text. It calculates hash values for the pattern and text windows and compares actual characters when hash values match.
+
+### Algorithm
+
+1. Start.
+2. Read the text and pattern.
+3. Calculate the lengths of both strings.
+4. If the pattern is longer than the text, display not found and stop.
+5. Calculate the hash value of the pattern and first text window.
+6. Compare both hash values:
+
+   * If they match, compare individual characters.
+   * If all characters match, display the position.
+7. Calculate the hash of the next text window using the rolling hash technique.
+8. Repeat until all possible windows are checked.
+9. If no match is found, display not found.
+10. Stop.
 
 ### Code
 
@@ -853,12 +1104,12 @@ int main() {
 * **Time Complexity:**
 
   * Average: O(n + m)
-  * Worst: O(nm) due to hash collisions.
+  * Worst: O(nm)
 * **Space Complexity:** O(1)
 
 ### Conclusion
 
-Rabin-Karp efficiently searches for a pattern in a text using hashing and character verification, reducing unnecessary comparisons in typical cases.
+Rabin-Karp searches for a pattern using hashing and character verification, reducing unnecessary comparisons in typical cases.
 
 ---
 
@@ -866,12 +1117,14 @@ Rabin-Karp efficiently searches for a pattern in a text using hashing and charac
 
 All programs can be compiled using GCC.
 
+**Linux / macOS:**
+
 ```bash
 gcc program.c -o program
 ./program
 ```
 
-On Windows:
+**Windows:**
 
 ```bash
 gcc program.c -o program.exe
@@ -880,7 +1133,7 @@ program.exe
 
 ---
 
-## Summary
+## Practical Summary
 
 | No. | Algorithm           | Technique               |
 | :-: | ------------------- | ----------------------- |
@@ -895,4 +1148,3 @@ program.exe
 |  9  | 15-Puzzle           | Branch and Bound        |
 |  10 | Rabin-Karp          | String Matching         |
 
-**End of DAA Practicals**

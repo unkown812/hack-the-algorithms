@@ -1,40 +1,97 @@
 {
   "name": "hack-the-algorithms",
-  "displayName": "Hack The Algorithms",
-  "description": "Hack the Algorithms in your own way",
-  "version": "0.0.1",
+  "displayName": "DAA Learning Companion",
+  "description": "An interactive algorithm learning and visualization companion for Visual Studio Code.",
+  "version": "0.2.0",
   "author": "ukown812",
   "publisher": "ukown812",
   "repository": {
     "type": "git",
     "url": "https://github.com/ukown812/hack-the-algorithms.git"
   },
+  "license": "MIT",
   "engines": {
-    "vscode": "^1.144.0"
+    "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "Education",
+    "Visualization",
+    "Programming Languages"
   ],
-  "activationEvents": [],
-  "main": "./extension.js",
+  "keywords": [
+    "DAA",
+    "Algorithms",
+    "Data Structures",
+    "Algorithm Visualization",
+    "Complexity Analysis",
+    "Computer Science",
+    "C Programming",
+    "Learning"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onCommand:daa-companion.openDashboard"
+  ],
   "contributes": {
-    "commands": [{
-      "command": "hack-the-algorithms.helloWorld",
-      "title": "Hello World"
-    }]
+    "commands": [
+      {
+        "command": "daa-companion.openDashboard",
+        "title": "DAA Companion: Open Dashboard"
+      },
+      {
+        "command": "daa-companion.openAlgorithmLibrary",
+        "title": "DAA Companion: Algorithm Library"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "daa-companion",
+          "title": "DAA Companion",
+          "icon": "media/icon.png"
+        }
+      ]
+    },
+    "views": {
+      "daa-companion": [
+        {
+          "id": "daa-companion.explorer",
+          "name": "Algorithm Explorer"
+        }
+      ]
+    }
   },
   "scripts": {
-    "lint": "eslint .",
-    "pretest": "npm run lint",
-    "test": "vscode-test"
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest run",
+    "package": "vsce package",
+    "vscode:prepublish": "npm run compile"
   },
   "devDependencies": {
-    "@types/vscode": "^1.144.0",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "24.x",
-    "eslint": "^10.5.0",
-    "@vscode/test-cli": "^0.0.15",
-    "@vscode/test-electron": "^3.0.0"
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
+    "@vitest/ui": "^2.0.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.0.0"
+  },
+  "dependencies": {
+    "d3": "^7.9.0",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "recharts": "^2.15.0",
+    "tailwindcss": "^3.4.0"
   },
   "overrides": {
     "diff": "^8.0.4",
