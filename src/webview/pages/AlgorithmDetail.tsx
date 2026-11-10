@@ -10,6 +10,7 @@ type Props = {
   onAnalyze?: (algo: Algorithm) => void;
   onPerformanceLab?: (algo: Algorithm) => void;
   onCompare?: (algo: Algorithm) => void;
+  onCodePlayground?: (algo: Algorithm) => void;
 };
 
 export const AlgorithmDetail: FunctionComponent<Props> = ({
@@ -19,6 +20,7 @@ export const AlgorithmDetail: FunctionComponent<Props> = ({
   onAnalyze,
   onPerformanceLab,
   onCompare,
+  onCodePlayground,
 }) => {
   if (!algorithm) {
     return (
@@ -130,6 +132,15 @@ export const AlgorithmDetail: FunctionComponent<Props> = ({
                   style={{ marginLeft: '8px' } as React.CSSProperties}
                 >
                   Compare Algorithms
+                </Button>
+              )}
+              {onCodePlayground && (
+                <Button
+                  variant="secondary"
+                  onClick={() => onCodePlayground(algorithm as Algorithm)}
+                  style={{ marginLeft: '8px' } as React.CSSProperties}
+                >
+                  Code Playground
                 </Button>
               )}
             </Flex>

@@ -11,12 +11,16 @@ type Props = {
   algorithms: Algorithm[];
   onSelectAlgorithm: (id: string) => void;
   onOpenLibrary: () => void;
+  onOpenPlayground: () => void;
+  onOpenPractice: () => void;
 };
 
 export const Dashboard = ({
   algorithms,
   onSelectAlgorithm,
   onOpenLibrary,
+  onOpenPlayground,
+  onOpenPractice,
 }: Props) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -88,18 +92,18 @@ export const Dashboard = ({
         >
           Quick Actions
         </Text>
-        <Flex gap={SPACING.md}>
+        <Flex gap={SPACING.md} style={{ flexWrap: 'wrap' }}>
           <Button onClick={onOpenLibrary}>
             Explore Algorithms
           </Button>
-          <Button variant="secondary">
-            Browse Practicals
+          <Button variant="secondary" onClick={onOpenPlayground}>
+            Open Code Playground
           </Button>
-          <Button variant="secondary">
-            Search Algorithms
+          <Button variant="secondary" onClick={onOpenPractice}>
+            Open Practice Centre
           </Button>
-          <Button variant="secondary">
-            Start Learning
+          <Button variant="secondary" onClick={onOpenLibrary}>
+            Study the C implementations
           </Button>
         </Flex>
       </Box>

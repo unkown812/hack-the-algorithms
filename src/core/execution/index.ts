@@ -1,27 +1,11 @@
-export interface ExecutionRequest {
-  algorithmId: string;
-  code: string;
-  input?: string;
-}
+/**
+ * Local code execution (Phase 5).
+ *
+ * The extension really compiles and runs the student's C program with the
+ * detected GCC toolchain — see `ExecutionService` and `ProcessManager`.
+ */
 
-export interface ExecutionResult {
-  success: boolean;
-  output?: string;
-  error?: string;
-  exitCode?: number;
-  executionTimeMs?: number;
-}
-
-export async function executeAlgorithm(
-  _request: ExecutionRequest
-): Promise<ExecutionResult> {
-  return {
-    success: false,
-    error: 'Code execution is not yet implemented in Phase 1.',
-    exitCode: -1,
-  };
-}
-
-export function isExecutionSupported(): boolean {
-  return false;
-}
+export * from './ExecutionConfig';
+export * from './ExecutionService';
+export * from './ExecutionSession';
+export * from './ProcessManager';

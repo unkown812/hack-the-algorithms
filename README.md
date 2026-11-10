@@ -65,6 +65,49 @@ Every number carries its class, and the classes are never merged:
 
 See [`docs/PHASE4.md`](docs/PHASE4.md) for the full design and the exact counting conventions.
 
+### Phase 5 Features (Complete)
+
+- **Code Playground** — write, compile, run and debug your own C implementation inside the extension
+- **Real GCC integration** — detects the local toolchain (MSYS2, MinGW-w64, TDM, Strawberry, Xcode CLT, build-essential), reads its version and verifies it by compiling and running a test program
+- **Compilation with diagnostics** — C99/C11/C17, `-O0`/`-O1`/`-O2`, warning level and debug symbols; every message is parsed, explained in plain language and shown with the offending source line
+- **Local execution engine** — real stdin, stdout and stderr, separate streams, output caps, timeouts, cancellation and a precise status (`success`, `compile-error`, `runtime-error`, `timeout`, `cancelled`)
+- **Interactive console** — program output, error output, exit code, duration and the exact command line that was executed
+- **Standard input panel** — type any input, reuse presets, never hardcode data into the source
+- **Debugger integration** — GDB in machine-interface mode: breakpoints from the editor gutter, continue, step over / into / out, variable inspector (with array expansion) and call stack
+- **Execution tracing** — real source lines, variables and live array contents; supported algorithms additionally derive comparison / exchange / iteration counters from the actual source
+- **Code-to-visualization** — the live array of your program is rendered with the Phase 2 visualizer while you step through it
+- **Test cases** — create, edit and run test cases; compare with exact, whitespace-normalised or numeric-tolerance matching
+- **Reference implementation comparison** — the reviewed C code, pseudocode and complexity metadata of every algorithm next to your own implementation
+- **Starter templates** — basic program, array I/O, searching, sorting, recursion, graph traversal, dynamic programming and an empty template
+- **Saved programs and execution history** — sources are stored as `.c` files in your workspace; the history keeps input, output, exit status and duration and can be cleared
+
+> **Safety note:** C programs run locally as your own user. A timeout is not a sandbox — a program can still access the files and resources of the executing user. Use a container or a restricted account when running code you do not trust. The extension never runs a program automatically and never needs elevated privileges.
+
+See [`docs/PHASE5.md`](docs/PHASE5.md) for the architecture, the security model and the limitations.
+
+### Phase 6 Features (Complete)
+
+- **Practice Centre** — reachable from the dashboard, the Activity Bar and the command palette
+- **Curated question bank** — 79 questions in ten categories with a verified explanation for every answer
+- **MCQ practice** — learning mode with immediate feedback, test mode without feedback, revision mode for the questions you got wrong
+- **Timed quizzes** — five presets (5 to 30 questions) plus a custom quiz builder, with a question navigator and a visible countdown
+- **Code output prediction** — predict the output of a real C program; the answers were produced by running the programs
+- **Find-the-error exercises** — identify the faulty line and see the corrected implementation
+- **Complexity challenges** — determine the iteration count and the time and space complexity of a snippet
+- **Coding challenges** — 23 problems from *find the minimum* to the Travelling Salesperson Problem; your solution is compiled and run locally with the Phase 5 toolchain
+- **Automated test-case evaluation** — public sample and practice tests plus hidden evaluation tests; a solution is only accepted when **every** test passes, and the hidden inputs are never shown
+- **Practical preparation** — the ten university-style practicals with aim, theory, algorithm, pseudocode, C program, sample input/output, complexity, conclusion and viva questions
+- **Mock practical examinations** — practice papers with a time limit (clearly marked as practice, never as an official examination)
+- **Viva practice** — 27 oral-examination questions with expected answers and a self assessment
+- **Learning progress dashboard** — statistics, topic-wise performance, frequently incorrect questions and achievements
+- **Revision recommendations** — transparent rules with a reason for every suggestion
+- **Bookmarks and revision lists** — mark questions, challenges and algorithms for later
+- **Local progress data** — stored on your machine, exportable as JSON, with reset and versioned migration
+
+> Everything in the practice centre works **offline**: the question bank, the challenges, the practicals and the viva questions ship with the extension, and your progress never leaves your computer.
+
+See [`docs/PHASE6.md`](docs/PHASE6.md) for the question catalogue, the scoring rules and the limitations.
+
 ---
 
 ## C DAA Practicals

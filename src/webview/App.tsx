@@ -7,16 +7,37 @@ import { AlgorithmVisualizer } from './pages/AlgorithmVisualizer';
 import { ComplexityAnalyzerPage } from './pages/ComplexityAnalyzerPage';
 import { PerformanceLabPage } from './pages/PerformanceLabPage';
 import { AlgorithmComparisonPage } from './pages/AlgorithmComparisonPage';
+import { CodePlaygroundPage } from './pages/CodePlaygroundPage';
+import { PracticePage } from './pages/PracticePage';
+import { QuizPage } from './pages/QuizPage';
+import { CodingChallengesPage } from './pages/CodingChallengesPage';
+import { PracticalPreparationPage } from './pages/PracticalPreparationPage';
+import { LearningProgressPage } from './pages/LearningProgressPage';
+import type { QuizConfig } from '../core/practice/types';
 import { postToExtension, onExtensionMessage } from './utils';
 import type { Algorithm } from '../core/algorithms';
 
-type View = 'dashboard' | 'library' | 'detail' | 'visualizer' | 'analyzer' | 'performance' | 'comparison';
+type View =
+  | 'dashboard'
+  | 'library'
+  | 'detail'
+  | 'visualizer'
+  | 'analyzer'
+  | 'performance'
+  | 'comparison'
+  | 'playground'
+  | 'practice'
+  | 'quiz'
+  | 'challenges'
+  | 'practicals'
+  | 'progress';
 
 export const App: FunctionComponent = () => {
   const [algorithms, setAlgorithms] = useState<Algorithm[]>([]);
   const [view, setView] = useState<View>('dashboard');
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm | undefined>(undefined);
   const [loading, setLoading] = useState(true);
+  const [quizConfig, setQuizConfig] = useState<QuizConfig | undefined>(undefined);
 
   useEffect(() => {
     postToExtension({ type: 'GET_ALGORITHMS' });
@@ -32,6 +53,13 @@ export const App: FunctionComponent = () => {
       case 'ALGORITHM_DETAIL': {
         setSelectedAlgorithm(message.payload as Algorithm | undefined);
         setView('detail');
+        break;
+      }
+      case 'OPEN_VIEW': {
+        const payload = message.payload as { view?: string } | undefined;
+        if (payload?.view === 'practice') {
+          setView('practice');
+        }
         break;
       }
       default:
@@ -86,6 +114,32 @@ export const App: FunctionComponent = () => {
     setView('comparison');
   };
 
+  const handleOpenPlayground = (algo?: Algorithm) => {
+    setSelectedAlgorithm(algo);
+    setView('playground');
+  };
+
+  const handleOpenPractice = () => {
+    setView('practice');
+  };
+
+  const handleOpenQuiz = (config: QuizConfig) => {
+    setQuizConfig(config);
+    setView('quiz');
+  };
+
+  const handleOpenChallenges = () => {
+    setView('challenges');
+  };
+
+  const handleOpenPracticals = () => {
+    setView('practicals');
+  };
+
+  const handleOpenProgress = () => {
+    setView('progress');
+  };
+
   const handleBackToDetail = () => {
     setView('detail');
   };
@@ -118,6 +172,8 @@ export const App: FunctionComponent = () => {
           algorithms={algorithms}
           onSelectAlgorithm={handleSelectAlgorithm}
           onOpenLibrary={handleOpenLibrary}
+          onOpenPlayground={() => handleOpenPlayground()}
+          onOpenPractice={handleOpenPractice}
         />
       )}
       {view === 'library' && (
@@ -135,6 +191,7 @@ export const App: FunctionComponent = () => {
           onAnalyze={handleOpenAnalyzer}
           onPerformanceLab={handleOpenPerformanceLab}
           onCompare={handleOpenComparison}
+          onCodePlayground={handleOpenPlayground}
         />
       )}
       {view === 'visualizer' && (
@@ -161,6 +218,33 @@ export const App: FunctionComponent = () => {
           algorithm={selectedAlgorithm!}
           onBack={handleBackToDetail}
         />
+      )}
+      {view === 'playground' && (
+        <CodePlaygroundPage
+          algorithmId={selectedAlgorithm?.id}
+          onBack={handleBackToDetail}
+        />
+      )}
+      {view === 'practice' && (
+        <PracticePage
+          onOpenQuiz={handleOpenQuiz}
+          onOpenChallenges={handleOpenChallenges}
+          onOpenPracticals={handleOpenPracticals}
+          onOpenProgress={handleOpenProgress}
+          onBack={handleBackToDashboard}
+        />
+      )}
+      {view === 'quiz' && (
+        <QuizPage config={quizConfig} onBack={handleOpenPractice} />
+      )}
+      {view === 'challenges' && (
+        <CodingChallengesPage onBack={handleOpenPractice} />
+      )}
+      {view === 'practicals' && (
+        <PracticalPreparationPage onBack={handleOpenPractice} />
+      )}
+      {view === 'progress' && (
+        <LearningProgressPage onBack={handleOpenPractice} />
       )}
     </Layout>
   );

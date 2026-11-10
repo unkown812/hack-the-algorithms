@@ -5,6 +5,7 @@ declare var window: {
     getState(): unknown;
   };
   addEventListener: (event: string, handler: (event: MessageEvent) => void) => void;
+  removeEventListener: (event: string, handler: (event: MessageEvent) => void) => void;
 };
 
 export function postToExtension(message: { type: string; payload?: unknown }): void {
@@ -18,13 +19,16 @@ export function postToExtension(message: { type: string; payload?: unknown }): v
 
 export function onExtensionMessage(
   handler: (event: MessageEvent) => void
-): void {
+): () => void {
   const acquireVsCodeApi = (window as unknown as { acquireVsCodeApi?: () => PostOffice }).acquireVsCodeApi;
   const vscodeApi = acquireVsCodeApi ? acquireVsCodeApi() : undefined;
 
-  if (vscodeApi) {
-    window.addEventListener('message', handler);
+  if (!vscodeApi) {
+    return () => undefined;
   }
+
+  window.addEventListener('message', handler);
+  return () => window.removeEventListener('message', handler);
 }
 
 interface PostOffice {

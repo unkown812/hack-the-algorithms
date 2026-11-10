@@ -27,14 +27,31 @@ implements vscode.TreeDataProvider<AlgorithmExplorerItem>, vscode.Disposable
 
     if (!element) {
       const categories = [...new Set(algorithms.map((a) => a.category))];
-      return categories.map(
-        (category) =>
-          new AlgorithmExplorerItem(
-            category,
-            category.charAt(0).toUpperCase() + category.slice(1),
-            vscode.TreeItemCollapsibleState.Collapsed
-          )
+
+      // The practice centre is the first entry of the activity bar view.
+      const practiceItem = new AlgorithmExplorerItem(
+        'practice-centre',
+        'Practice Centre',
+        vscode.TreeItemCollapsibleState.None
       );
+      practiceItem.iconPath = new vscode.ThemeIcon('school');
+      practiceItem.tooltip = 'Quizzes, coding challenges, practical preparation and your progress';
+      practiceItem.command = {
+        command: 'daa-companion.openPractice',
+        title: 'Open the practice centre',
+      };
+
+      return [
+        practiceItem,
+        ...categories.map(
+          (category) =>
+            new AlgorithmExplorerItem(
+              category,
+              category.charAt(0).toUpperCase() + category.slice(1),
+              vscode.TreeItemCollapsibleState.Collapsed
+            )
+        ),
+      ];
     }
 
     return algorithms

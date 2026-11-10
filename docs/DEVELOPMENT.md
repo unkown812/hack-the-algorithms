@@ -58,6 +58,35 @@ docs/            - Project documentation
 5. Add the input limit in `src/core/complexity/benchmarking/BenchmarkConfig.ts`
 6. Add exact counter assertions in `tests/unit/complexity/counters.test.ts`
 
+## Working on the Code Playground (Phase 5)
+
+The playground splits into two halves — never mix them:
+
+- **Extension host** (`src/core/compiler`, `src/core/execution`,
+  `src/core/debugging`, `src/core/tracing`, `src/core/testing`,
+  `src/core/playground`): everything that touches a process, a compiler, a
+  debugger or the file system.
+- **Webview** (`src/webview/components/playground`,
+  `src/webview/components/debugging`, `src/webview/components/execution`,
+  `src/webview/components/testing`): rendering only. Webview files may import
+  **types** from `src/core/playground/types`, but never a module that pulls in
+  `node:*` or `vscode`.
+
+Every new host capability needs a message in `PLAYGROUND_MESSAGES`
+(`src/shared/constants/index.ts`), a case in
+`src/extension/playground/message-handler.ts` and a handler in the webview
+page.
+
+### Local toolchain
+
+The compiler and debugger tests use the real toolchain when one is installed
+and are skipped otherwise:
+
+```bash
+gcc --version   # required for the compiler and execution tests
+gdb --version   # required for the debugger tests
+```
+
 ## Publishing
 
 1. Update `version` in `package.json`
