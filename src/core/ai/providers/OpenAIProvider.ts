@@ -1,6 +1,12 @@
 import { AIProviderError } from '../AIProvider';
 import type { AIProvider } from '../AIProvider';
+import {
+  createRequestControl,
+  readEventStream,
+  toProviderError,
+} from './streamUtils';
 import type {
+  AIChunk,
   AIProviderConfig,
   AIProviderStatus,
   AIRequest,
@@ -21,6 +27,7 @@ export class OpenAIProvider implements AIProvider {
   readonly name = 'OpenAI';
   readonly requiresKey = true;
   readonly isExternal = true;
+  readonly supportsStreaming = true;
   readonly defaultModel = 'gpt-4o-mini';
   readonly models = ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini', 'gpt-4.1'];
   readonly documentationUrl = 'https://platform.openai.com/docs';
@@ -35,6 +42,7 @@ export class OpenAIProvider implements AIProvider {
       requiresKey: this.requiresKey,
       isExternal: this.isExternal,
       documentationUrl: this.documentationUrl,
+      supportsStreaming: this.supportsStreaming,
     };
   }
 
@@ -50,19 +58,10 @@ export class OpenAIProvider implements AIProvider {
     const model = config.model || this.defaultModel;
     const startedAt = Date.now();
 
-    const messages = [
-      { role: 'system', content: request.systemPrompt },
-      ...this.buildContextMessages(request),
-      ...request.messages
-        .filter((message) => message.role !== 'system')
-        .slice(-config.maxContextMessages)
-        .map((message) => ({ role: message.role, content: message.content })),
-    ];
-
     const response = await this.request(
       {
         model,
-        messages,
+        messages: this.buildMessages(request, config),
         temperature: config.temperature,
         max_tokens: config.maxTokens,
       },
@@ -85,6 +84,91 @@ export class OpenAIProvider implements AIProvider {
       durationMs: Date.now() - startedAt,
       usedContext: request.context,
     };
+  }
+
+  /**
+   * Sends the request and delivers the answer piece by piece.
+   * The OpenAI chat completions API returns a server-sent event stream.
+   */
+  async stream(
+    request: AIRequest,
+    config: AIProviderConfig,
+    apiKey: string | undefined,
+    onChunk: (chunk: AIChunk) => void
+  ): Promise<AIResponse> {
+    if (!apiKey) {
+      throw new AIProviderError('not-configured', 'No API key is stored for OpenAI.');
+    }
+
+    const model = config.model || this.defaultModel;
+    const startedAt = Date.now();
+
+    const { controller, dispose } = createRequestControl(request.signal, config.timeoutMs);
+
+    try {
+      const response = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: this.buildMessages(request, config),
+          temperature: config.temperature,
+          max_tokens: config.maxTokens,
+          stream: true,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw this.mapError(response.status, text);
+      }
+
+      const content = (
+        await readEventStream(response, { onText: (text) => onChunk({ text }) }, (payload) => {
+          const data = payload as { choices?: Array<{ delta?: { content?: string } }> };
+          return data.choices?.[0]?.delta?.content ?? undefined;
+        })
+      ).trim();
+
+      onChunk({ text: '', done: true });
+
+      if (content === '') {
+        throw new AIProviderError('empty-response', 'The provider returned an empty answer.');
+      }
+
+      return {
+        content,
+        provider: this.id,
+        model,
+        sources: [],
+        fromKnowledgeBase: false,
+        durationMs: Date.now() - startedAt,
+        usedContext: request.context,
+      };
+    } catch (error) {
+      throw toProviderError(error, request.signal);
+    } finally {
+      dispose();
+    }
+  }
+
+  /** Builds the message list of the request. */
+  private buildMessages(
+    request: AIRequest,
+    config: AIProviderConfig
+  ): Array<{ role: string; content: string }> {
+    return [
+      { role: 'system', content: request.systemPrompt },
+      ...this.buildContextMessages(request),
+      ...request.messages
+        .filter((message) => message.role !== 'system')
+        .slice(-config.maxContextMessages)
+        .map((message) => ({ role: message.role, content: message.content })),
+    ];
   }
 
   /** Turns the shared context into a system message. */

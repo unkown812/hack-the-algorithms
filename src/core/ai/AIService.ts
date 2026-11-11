@@ -5,10 +5,17 @@ import type { ContextSelection } from './AIContextBuilder';
 import { AIResponseValidator } from './AIResponseValidator';
 import { AIConversationManager } from './AIConversationManager';
 import { buildSystemPrompt } from './prompts/system/tutor.prompt';
+import {
+  parseGeneratedQuestions,
+  QUESTION_GENERATION_INSTRUCTION,
+} from './QuestionJsonParser';
 import type {
+  AIChunk,
   AIContextItem,
   AIProviderConfig,
   AIProviderId,
+  AIQuestionDraft,
+  AIQuestionRequest,
   AIRequest,
   AIResponse,
   AISource,
@@ -43,6 +50,12 @@ export interface AskRequest {
   /** The task that shapes the prompt, e.g. "algorithm-explanation". */
   task?: string;
   signal?: AbortSignal;
+  /**
+   * Called for every piece of the answer while it is generated.
+   * When it is missing — or the provider cannot stream — the answer is
+   * delivered at once.
+   */
+  onChunk?: (chunk: AIChunk) => void;
 }
 
 export interface AskResult {
@@ -55,6 +68,8 @@ export interface AskResult {
   conversationId: string;
   /** True when context was removed because the consent was missing. */
   contextWithheld: boolean;
+  /** True when the answer was delivered piece by piece. */
+  streamed: boolean;
 }
 
 export class AIService {
@@ -120,8 +135,29 @@ export class AIService {
     };
 
     let response: AIResponse;
+    let streamed = false;
     try {
-      response = await access.provider.send(aiRequest, config, access.apiKey);
+      /**
+       * The answer is streamed when the student waits for it in the chat and
+       * the provider supports it. Otherwise the answer arrives at once.
+       */
+      const canStream =
+        config.streaming &&
+        Boolean(request.onChunk) &&
+        Boolean(access.provider.stream) &&
+        access.provider.supportsStreaming !== false;
+
+      if (canStream && access.provider.stream) {
+        response = await access.provider.stream(
+          aiRequest,
+          config,
+          access.apiKey,
+          request.onChunk!
+        );
+        streamed = true;
+      } else {
+        response = await access.provider.send(aiRequest, config, access.apiKey);
+      }
     } catch (error) {
       if (error instanceof AIProviderError) {
         const message = describeProviderError(error);
@@ -166,6 +202,80 @@ export class AIService {
       context: contextToSend,
       conversationId,
       contextWithheld,
+      streamed,
+    };
+  }
+
+  /**
+   * Generates practice questions with the provider.
+   *
+   * The questions are returned as *candidates* — they are not usable until
+   * the student reviewed them in the review workflow.
+   */
+  async generateQuestions(
+    request: AIQuestionRequest,
+    signal?: AbortSignal
+  ): Promise<{ candidates: Array<Partial<AIQuestionDraft>>; raw: string; warnings: string[] }> {
+    const config = this.getConfiguration();
+    const access = await this.resolveProvider(config.provider);
+    if (!access) {
+      throw new AIProviderError('not-configured', 'The selected provider is not available.');
+    }
+
+    const count = Math.min(Math.max(request.count ?? 5, 1), 20);
+    const instructions = [
+      `Write ${count} practice questions${request.topic ? ` about "${request.topic}"` : ''}.`,
+      request.algorithmId ? `They must be about the algorithm "${request.algorithmId}".` : '',
+      request.difficulty ? `The difficulty is "${request.difficulty}".` : '',
+      request.types?.length ? `Only these types are allowed: ${request.types.join(', ')}.` : '',
+      request.instruction ?? '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    const aiRequest: AIRequest = {
+      messages: [
+        { id: 'generate', role: 'user', content: instructions, createdAt: Date.now() },
+      ],
+      systemPrompt: `${buildSystemPrompt(request.difficulty === 'beginner' ? 'beginner' : 'detailed', 'question-generation')}\n\n${QUESTION_GENERATION_INSTRUCTION}`,
+      context: [],
+      mode: 'detailed',
+      temperature: config.temperature,
+      maxTokens: config.maxTokens,
+      task: 'question-generation',
+      signal,
+    };
+
+    let response: AIResponse;
+    try {
+      response = await access.provider.send(aiRequest, config, access.apiKey);
+    } catch (error) {
+      if (error instanceof AIProviderError) {
+        throw error;
+      }
+      throw new AIProviderError(
+        'server',
+        error instanceof Error ? error.message : 'The generation failed.'
+      );
+    }
+
+    const parsed = parseGeneratedQuestions(response.content);
+    const warnings: string[] = [];
+
+    if (parsed.length === 0) {
+      warnings.push(
+        'The provider did not return questions in the expected format — the raw answer is shown instead.'
+      );
+    } else if (parsed.length < count) {
+      warnings.push(
+        `The provider returned ${parsed.length} of the requested ${count} questions.`
+      );
+    }
+
+    return {
+      candidates: parsed.map((entry) => entry.candidate),
+      raw: response.content,
+      warnings,
     };
   }
 

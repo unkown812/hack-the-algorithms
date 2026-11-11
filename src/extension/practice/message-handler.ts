@@ -8,7 +8,7 @@ import { PRACTICALS } from '../../core/practicals/practicals';
 import { VIVA_QUESTIONS } from '../../core/practicals/VivaQuestionService';
 import { MOCK_EXAMS } from '../../core/practicals/MockExamEngine';
 import { TOPICS } from '../../core/progress/TopicProgressTracker';
-import type { QuestionFilter } from '../../core/practice/types';
+import type { Question, QuestionFilter } from '../../core/practice/types';
 
 /**
  * Handles the Phase 6 messages of the Practice Centre.
@@ -22,7 +22,12 @@ export class PracticeMessageHandler {
 
   constructor(
     context: vscode.ExtensionContext,
-    private readonly post: (message: { type: string; payload?: unknown }) => void
+    private readonly post: (message: { type: string; payload?: unknown }) => void,
+    /**
+     * The reviewed questions of the student.
+     * They extend the verified bank of Phase 6 — they never replace it.
+     */
+    extraQuestions?: () => Question[]
   ) {
     const store = new LearningDataStore({
       read: () => context.globalState.get('daa.learningData'),
@@ -30,7 +35,7 @@ export class PracticeMessageHandler {
         void context.globalState.update('daa.learningData', data);
       },
     });
-    this.service = new PracticeService(store);
+    this.service = new PracticeService(store, undefined, extraQuestions);
   }
 
   /** Handles one message of the webview. */

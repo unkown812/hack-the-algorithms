@@ -15,6 +15,12 @@ import type { AIContextItem, AIProviderConfig } from './types';
  */
 
 export interface ContextSelection {
+  /**
+   * Context items the student attached directly — for example the current
+   * visualization step or the last compiler result. They are already
+   * prepared, so they are passed through unchanged.
+   */
+  items?: AIContextItem[];
   /** The algorithm the student is looking at. */
   algorithmId?: string;
   /** The source code the student selected. */
@@ -88,6 +94,16 @@ export class AIContextBuilder {
     config: AIProviderConfig
   ): BuiltContext {
     const items: AIContextItem[] = [];
+
+    // The items the student attached directly come first — they are the
+    // context the student is looking at right now.
+    if (selection.items && selection.items.length > 0) {
+      for (const item of selection.items) {
+        if (item.content && item.content.trim()) {
+          items.push({ ...item, size: item.content.length });
+        }
+      }
+    }
 
     if (selection.algorithmId) {
       const algorithm = getAlgorithmById(selection.algorithmId);

@@ -6,7 +6,7 @@
  * in these types — the webview only ever learns *whether* a key is stored.
  */
 
-export type AIProviderId = 'openai' | 'gemini' | 'local';
+export type AIProviderId = 'openai' | 'gemini' | 'local' | 'local-llm';
 
 export type ExplanationMode =
   | 'beginner'
@@ -92,6 +92,17 @@ export interface AIRequest {
   signal?: AbortSignal;
 }
 
+/**
+ * One piece of a streamed answer.
+ * The provider sends them in order; the webview appends them.
+ */
+export interface AIChunk {
+  /** The new text of this chunk. */
+  text: string;
+  /** True for the last chunk of an answer. */
+  done?: boolean;
+}
+
 export interface AIResponse {
   content: string;
   /** The provider that produced the answer. */
@@ -137,6 +148,10 @@ export interface AIProviderConfig {
   useLocalResources: boolean;
   /** Whether the student agreed to share the selected context with a provider. */
   allowExternalContext: boolean;
+  /** Whether answers are streamed piece by piece when the provider supports it. */
+  streaming: boolean;
+  /** Base URL of a local model server (Ollama compatible), e.g. http://localhost:11434. */
+  localBaseUrl: string;
 }
 
 export const DEFAULT_AI_CONFIGURATION: AIProviderConfig = {
@@ -149,6 +164,8 @@ export const DEFAULT_AI_CONFIGURATION: AIProviderConfig = {
   maxContextCharacters: 12000,
   useLocalResources: true,
   allowExternalContext: false,
+  streaming: true,
+  localBaseUrl: 'http://localhost:11434',
 };
 
 /** The provider information the webview may see — never a credential. */
@@ -166,6 +183,10 @@ export interface AIProviderStatus {
   /** True when the provider talks to an external service. */
   isExternal: boolean;
   documentationUrl?: string;
+  /** True when the provider can stream the answer piece by piece. */
+  supportsStreaming: boolean;
+  /** For a local model server: the address that is contacted. */
+  endpoint?: string;
 }
 
 export interface AIConversation {
@@ -183,4 +204,63 @@ export interface AISuggestion {
   text: string;
   /** The task the suggestion triggers. */
   task?: string;
+}
+
+/**
+ * The state of an AI-generated question.
+ *
+ * A generated question is never part of the verified question bank. It stays
+ * a draft until the student reviewed it, and only an approved draft may be
+ * used in a quiz.
+ */
+export type AIDraftStatus = 'pending' | 'approved' | 'rejected';
+
+/**
+ * A question that the assistant generated.
+ *
+ * It follows the structure of the verified `Question` so that it can be
+ * evaluated by the existing assessment engine, but it keeps its own status.
+ */
+export interface AIQuestionDraft {
+  id: string;
+  title: string;
+  category: string;
+  topic: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  type:
+    | 'mcq'
+    | 'multiple-select'
+    | 'true-false'
+    | 'fill-blank'
+    | 'code-output'
+    | 'find-error'
+    | 'complexity'
+    | 'short-answer';
+  question: string;
+  options?: string[];
+  correctAnswer: string | string[];
+  explanation: string;
+  tags: string[];
+  code?: string;
+  /** The provider that produced the draft. */
+  provider: AIProviderId;
+  createdAt: number;
+  status: AIDraftStatus;
+  reviewedAt?: number;
+  /** Why the draft was rejected. */
+  reviewNote?: string;
+  /** The problems the validation found while generating the draft. */
+  issues: string[];
+}
+
+/** The criteria for generating a set of practice questions. */
+export interface AIQuestionRequest {
+  topic?: string;
+  algorithmId?: string;
+  difficulty?: AIQuestionDraft['difficulty'];
+  count?: number;
+  /** The question types that should be produced. */
+  types?: AIQuestionDraft['type'][];
+  /** The free-text instruction of the student. */
+  instruction?: string;
 }

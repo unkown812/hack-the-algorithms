@@ -1,4 +1,5 @@
 import type {
+  AIChunk,
   AIProviderConfig,
   AIProviderId,
   AIProviderStatus,
@@ -45,6 +46,26 @@ export interface AIProvider {
    * The implementation must honour the abort signal of the request.
    */
   send(request: AIRequest, config: AIProviderConfig, apiKey?: string): Promise<AIResponse>;
+
+  /**
+   * Whether the provider can deliver the answer piece by piece.
+   * A provider that cannot stream simply does not implement `stream`.
+   */
+  readonly supportsStreaming?: boolean;
+
+  /**
+   * Sends a request and delivers the answer in chunks.
+   *
+   * The callback is called for every piece of text; the last call has
+   * `done: true`. The returned response is the complete answer, so the
+   * caller can use it exactly like the result of `send`.
+   */
+  stream?(
+    request: AIRequest,
+    config: AIProviderConfig,
+    apiKey: string | undefined,
+    onChunk: (chunk: AIChunk) => void
+  ): Promise<AIResponse>;
 }
 
 /** The provider registry — the only place that knows the concrete providers. */

@@ -2,7 +2,7 @@
   "name": "hack-the-algorithms",
   "displayName": "Hack The Algorithms",
   "description": "An interactive algorithm learning and visualization companion for Visual Studio Code.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "author": "ukown812",
   "publisher": "ukown812",
   "repository": {
@@ -143,11 +143,12 @@
           "type": "string",
           "enum": [
             "local",
+            "local-llm",
             "openai",
             "gemini"
           ],
           "default": "local",
-          "description": "AI provider used by the DAA learning assistant. \"local\" answers from the bundled learning resources and needs no key."
+          "description": "AI provider used by the DAA learning assistant. \"local\" answers from the bundled learning resources and needs no key; \"local-llm\" uses a local model server on your machine."
         },
         "daaCompanion.ai.model": {
           "type": "string",
@@ -195,6 +196,16 @@
           "type": "boolean",
           "default": false,
           "description": "Consent flag: user-selected context (code, execution results, diagnostics, progress) may be sent to an external provider. Never applies to the local provider."
+        },
+        "daaCompanion.ai.streaming": {
+          "type": "boolean",
+          "default": true,
+          "description": "Deliver the answer piece by piece when the provider supports streaming."
+        },
+        "daaCompanion.ai.localBaseUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Address of a local model server (Ollama compatible) for the 'local-llm' provider."
         }
       }
     }

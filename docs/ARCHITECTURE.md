@@ -61,10 +61,10 @@ graph TD
 - `src/core/storage/` - Learning data store and data migration
 - `src/core/ai/` - Phase 7 AI learning layer
   - `types/` - AI message, request, response, context, provider configuration types
-  - `providers/` - LocalKnowledgeProvider (offline), OpenAIProvider, GeminiProvider
+  - `providers/` - LocalKnowledgeProvider (offline), LocalLLMProvider (Ollama compatible), OpenAIProvider, GeminiProvider, streamUtils
   - `prompts/system/` - Tutor system prompt and mode/task instructions
   - `features/` - AlgorithmTutor, CodeExplainer, DebuggingAssistant, ComplexityTutor, VisualizationAssistant, PracticalAssistant, QuestionGenerator, LearningAdvisor
-  - `AIProvider.ts`, `AIService.ts`, `AIContextBuilder.ts`, `AIRetrievalService.ts`, `AIResponseValidator.ts`, `AIConversationManager.ts`, `AIConfiguration.ts`
+  - `AIProvider.ts`, `AIService.ts`, `AIContextBuilder.ts`, `AIRetrievalService.ts`, `AIEmbeddingIndex.ts`, `AIResponseValidator.ts`, `AIConversationManager.ts`, `AIConfiguration.ts`, `QuestionDraftService.ts`, `QuestionJsonParser.ts`
 - `src/core/visualization/` - Visualization engine and trace generators
   - `types/` - ExecutionStep, AlgorithmTrace, VisualizationState, VisualizationConfig
   - `engine/` - VisualizationEngine, ExecutionController, StepManager, PlaybackController
@@ -93,7 +93,8 @@ graph TD
 - `src/webview/components/challenges/` - Challenge explorer with the Phase 5 editor
 - `src/webview/components/practicals/` - Practical preparation, mock exams, viva practice
 - `src/webview/components/progress/` - Learning progress dashboard
-- `src/webview/components/ai/` - AI chat message renderer (markdown), conversation list, context panel, provider settings, mode selector, quick actions
+- `src/webview/components/ai/` - AI chat message renderer (markdown), conversation list, context panel, provider settings, mode selector, quick actions, question review, context publishers
+- `src/webview/services/aiContextRegistry.ts` - The learning context the pages publish and the assistant offers
 - `src/webview/hooks/` - useVisualization, usePlayback, usePractice, useAI
 - `src/webview/types/` - Webview message types
 - `src/webview/utils/` - postMessage communication wrapper

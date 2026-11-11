@@ -1,4 +1,5 @@
 import { getAllAlgorithms } from '../algorithms/registry';
+import { embeddingIndex } from './AIEmbeddingIndex';
 import { ALL_QUESTIONS } from '../questions/QuestionRegistry';
 import { PRACTICALS } from '../practicals/practicals';
 import { VIVA_QUESTIONS } from '../practicals/VivaQuestionService';
@@ -207,19 +208,48 @@ export function buildKnowledgeBase(): KnowledgeDocument[] {
   return documents;
 }
 
+/** The similarity a document needs to be found without a literal match. */
+const SEMANTIC_MATCH_THRESHOLD = 0.25;
+
+/** The bonus for a document whose reference the query names exactly. */
+const EXACT_REFERENCE_BONUS = 6;
+
+/** Normalises a text so that two spellings of the same name compare equal. */
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
 /** The options of a retrieval. */
 export interface RetrievalOptions {
   limit?: number;
   kinds?: KnowledgeKind[];
   /** Minimum score a document has to reach. */
   minimumScore?: number;
+  /**
+   * How much the semantic similarity contributes to the score.
+   * 0 disables the embedding index, 1 lets it dominate.
+   */
+  semanticWeight?: number;
 }
 
 export class AIRetrievalService {
   /**
    * Searches the knowledge base.
-   * The scoring is explainable: a document scores one point per matching
-   * keyword, and three points when its title matches.
+   *
+   * The scoring combines two explainable parts:
+   *
+   * - the **keyword score**: one point per matching term, two for a matching
+   *   keyword of the document, three for a matching title,
+   * - the **semantic score**: the cosine similarity of the local embedding
+   *   index, which finds documents that match the *meaning* of the question
+   *   even when the exact words differ.
+   *
+   * The semantic part is scaled by the strength of the keyword signal of the
+   * query. An exact match therefore always stays in front, while a question
+   * that uses different words can still reach the right document.
    */
   search(query: string, options: RetrievalOptions = {}): KnowledgeDocument[] {
     const terms = tokenize(query);
@@ -231,7 +261,13 @@ export class AIRetrievalService {
       return [];
     }
 
-    const scored = documents.map((document) => {
+    const semanticWeight = options.semanticWeight ?? 0.6;
+    const semanticScores =
+      semanticWeight > 0 ? this.getSemanticScores(query) : new Map<string, number>();
+
+    // The keyword part first — it decides how much the semantic part may add.
+    const normalizedQuery = normalizeText(query);
+    const keywordScores = documents.map((document) => {
       const haystack = `${document.title} ${document.keywords.join(' ')} ${document.content}`.toLowerCase();
       const title = document.title.toLowerCase();
 
@@ -248,14 +284,55 @@ export class AIRetrievalService {
         }
       }
 
-      return { ...document, score };
+      // A query that names a resource exactly ("binary search") points at
+      // that resource — the comprehensive source wins over a mention of it.
+      if (document.reference && normalizeText(document.reference) === normalizedQuery) {
+        score += EXACT_REFERENCE_BONUS;
+      }
+
+      return score;
+    });
+
+    const strongestKeyword = Math.max(1, ...keywordScores);
+
+    const scored = documents.map((document, index) => {
+      const similarity = semanticScores.get(document.id) ?? 0;
+      const keywordScore = keywordScores[index];
+      const semanticScore = similarity * semanticWeight * strongestKeyword;
+
+      return { ...document, score: keywordScore + semanticScore };
     });
 
     const minimum = options.minimumScore ?? 1;
     return scored
-      .filter((document) => document.score >= minimum)
+      .filter(
+        (document, index) =>
+          keywordScores[index] >= minimum ||
+          // A document without a literal match is still found when the
+          // meaning matches clearly.
+          (semanticScores.get(document.id) ?? 0) >= SEMANTIC_MATCH_THRESHOLD
+      )
       .sort((a, b) => b.score - a.score)
       .slice(0, options.limit ?? 6);
+  }
+
+  /**
+   * The semantic similarity of the documents to a query.
+   * The index is built once per session and then reused.
+   */
+  private getSemanticScores(query: string): Map<string, number> {
+    const documents = buildKnowledgeBase();
+
+    if (!embeddingIndex.isBuilt) {
+      embeddingIndex.build(
+        documents.map((document) => ({
+          id: document.id,
+          text: `${document.title} ${document.keywords.join(' ')} ${document.content}`,
+        }))
+      );
+    }
+
+    return embeddingIndex.search(query);
   }
 
   /** The documents of one algorithm — used to build the algorithm context. */

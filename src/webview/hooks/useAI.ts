@@ -52,4 +52,10 @@ export const aiApi = {
     sendAIMessage(AI_MESSAGES.GENERATE_VIVA, { question, conversationId }),
   generateQuestions: (request: unknown, conversationId?: string) =>
     sendAIMessage(AI_MESSAGES.GENERATE_QUESTIONS, { request, conversationId }),
+  getQuestionDrafts: () => sendAIMessage(AI_MESSAGES.GET_QUESTION_DRAFTS),
+  reviewDraft: (draftId: string, action: 'approve' | 'reject', note?: string) =>
+    sendAIMessage(AI_MESSAGES.REVIEW_QUESTION_DRAFT, { draftId, action, note }),
+  deleteDraft: (draftId: string) =>
+    sendAIMessage(AI_MESSAGES.DELETE_QUESTION_DRAFT, { draftId }),
+  clearRejectedDrafts: () => sendAIMessage(AI_MESSAGES.CLEAR_REJECTED_DRAFTS),
 };

@@ -30,6 +30,7 @@ import type {
   TestRunSummary,
   TraceEvent,
 } from '../../core/playground/types';
+import { PlaygroundContextPublisher } from '../components/ai/AIContextPublisher';
 
 type PlaygroundTab = 'code' | 'debug' | 'tests' | 'reference' | 'history';
 
@@ -335,6 +336,13 @@ export const CodePlaygroundPage: FunctionComponent<CodePlaygroundProps> = ({
 
   return (
     <Box style={{ padding: SPACING.lg }}>
+      {/* The program, the diagnostics and the last run are available as context. */}
+      <PlaygroundContextPublisher
+        source={source}
+        diagnostics={diagnostics}
+        executionResult={executionResult}
+      />
+
       <Flex gap={SPACING.md} align="center" justify="between" style={{ marginBottom: SPACING.lg, flexWrap: 'wrap' } as React.CSSProperties}>
         <Box>
           <Text as="h1" style={{ ...TYPOGRAPHY.h1, color: COLORS.textPrimary, margin: 0 }}>

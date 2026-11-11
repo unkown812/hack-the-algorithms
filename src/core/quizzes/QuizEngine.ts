@@ -48,6 +48,11 @@ export interface BuildQuizOptions {
   preferIds?: string[];
   /** Only these question types are used. */
   types?: Question['type'][];
+  /**
+   * Additional questions that may be used — the reviewed questions of the
+   * student. They never replace the verified bank; they only extend it.
+   */
+  extraQuestions?: Question[];
 }
 
 export interface BuiltQuiz {
@@ -65,7 +70,7 @@ export interface BuiltQuiz {
 export function buildQuiz(config: QuizConfig, options: BuildQuizOptions = {}): BuiltQuiz {
   const seed = options.seed ?? hashString(config.id + config.questionCount);
 
-  const candidates = filterQuestions({
+  const verified = filterQuestions({
     category: config.category,
     topic: config.topic,
     difficulty: config.difficulty,
@@ -73,7 +78,29 @@ export function buildQuiz(config: QuizConfig, options: BuildQuizOptions = {}): B
     ids: options.types
       ? undefined
       : undefined,
-  }).filter((question) => !options.excludeIds?.includes(question.id));
+  });
+
+  /**
+   * The reviewed questions of the student join the verified bank — they are
+   * filtered with the same criteria, so a quiz for one category never mixes
+   * in a question of another one.
+   */
+  const extra = (options.extraQuestions ?? []).filter((question) => {
+    if (config.category && question.category !== config.category) {
+      return false;
+    }
+    if (config.topic && question.topic !== config.topic) {
+      return false;
+    }
+    if (config.difficulty && question.difficulty !== config.difficulty) {
+      return false;
+    }
+    return true;
+  });
+
+  const candidates = [...verified, ...extra].filter(
+    (question) => !options.excludeIds?.includes(question.id)
+  );
 
   const typed = options.types
     ? candidates.filter((question) => options.types!.includes(question.type))

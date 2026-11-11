@@ -54,6 +54,7 @@ export const AIProviderSettings: FunctionComponent<{
   }
 
   const external = statuses.find((status) => status.id === config.provider)?.isExternal ?? false;
+  const activeStatus = statuses.find((status) => status.id === config.provider);
 
   return (
     <Box
@@ -89,6 +90,15 @@ export const AIProviderSettings: FunctionComponent<{
           </option>
         ))}
       </select>
+
+      {activeStatus && (
+        <Text as="p" style={{ ...TYPOGRAPHY.small, fontSize: '0.75rem', color: COLORS.textMuted, margin: `${SPACING.xs} 0 0 0` } as React.CSSProperties}>
+          {activeStatus.supportsStreaming
+            ? 'This provider delivers the answer piece by piece.'
+            : 'This provider delivers the complete answer at once.'}
+          {activeStatus.endpoint ? ` Server: ${activeStatus.endpoint}.` : ''}
+        </Text>
+      )}
 
       <label style={{ ...TYPOGRAPHY.small, color: COLORS.textMuted, display: 'block', margin: `${SPACING.md} 0 0.25rem 0` }}>
         Model
@@ -184,6 +194,34 @@ export const AIProviderSettings: FunctionComponent<{
           onChange={(value) => onSaveConfig({ timeoutMs: value * 1000 })}
         />
       </Flex>
+
+      <label style={{ ...TYPOGRAPHY.small, color: COLORS.textMuted, display: 'flex', gap: '0.5rem', alignItems: 'center', margin: `${SPACING.md} 0 0.25rem 0`, cursor: 'pointer' }}>
+        <input
+          type="checkbox"
+          checked={config.streaming}
+          onChange={(event) => onSaveConfig({ streaming: event.target.checked })}
+        />
+        Deliver the answer piece by piece when the provider supports streaming
+      </label>
+
+      {config.provider === 'local-llm' && (
+        <>
+          <label style={{ ...TYPOGRAPHY.small, color: COLORS.textMuted, display: 'block', margin: `${SPACING.md} 0 0.25rem 0` }}>
+            Address of the local model server
+          </label>
+          <input
+            type="text"
+            value={config.localBaseUrl}
+            onChange={(event) => onSaveConfig({ localBaseUrl: event.target.value })}
+            placeholder="http://localhost:11434"
+            style={inputStyle}
+          />
+          <Text as="p" style={{ ...TYPOGRAPHY.small, fontSize: '0.75rem', color: COLORS.textMuted, margin: `${SPACING.xs} 0 0 0` }}>
+            The models are read from the server when it is running — for example "ollama serve" with "ollama pull llama3.2".
+            The request never leaves your machine.
+          </Text>
+        </>
+      )}
 
       <Flex gap={SPACING.sm} align="center" style={{ marginTop: SPACING.md }}>
         <Button variant="secondary" size="sm" onClick={onTest}>

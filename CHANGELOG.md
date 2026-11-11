@@ -6,6 +6,25 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-11
+
+### Added
+
+- **Phase 7.1 — streaming, semantic retrieval, local models and the review workflow**
+  - Streaming answers: OpenAI and Gemini deliver the answer piece by piece over server-sent events, the local model server over newline-delimited JSON, and the chat renders the text while it arrives
+  - The "Stop" button cancels a running request; the streaming can be switched off in the settings
+  - Local embedding index for the retrieval: a hashed word and character-trigram vector with inverse-document-frequency weighting, combined with the keyword score into a hybrid ranking — the exact match always wins, and a question that uses other words still finds the right document
+  - A local model provider (Ollama compatible) that needs no API key and never sends data off the machine; the installed models are read from the running server and the address is configurable
+  - Automatic context binding: the algorithm, the current visualization step, the playground program, the compiler diagnostics, the last run and the complexity analysis are offered as context chips in the assistant — attaching them stays an explicit action
+  - Review workflow for generated practice questions: the generated questions are parsed, validated (structure, answer, explanation, duplicates) and presented for approval; only an approved question may be used in a quiz
+  - Approved questions extend the verified question bank without changing it — they keep their own store and their own marking
+  - The generated questions can be reviewed, rejected with a note and deleted in the assistant
+
+### Changed
+
+- The retrieval now prefers the comprehensive source of an algorithm over a single mention of it
+- The provider list in the settings shows whether a provider supports streaming
+
 ## [0.5.0] - 2026-11-11
 
 ### Added

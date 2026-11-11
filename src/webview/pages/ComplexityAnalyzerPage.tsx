@@ -13,6 +13,7 @@ import { LearningModuleView } from '../components/complexity/LearningModuleView'
 import { ComplexityExplanationService } from '../../core/complexity/explanations/ComplexityExplanationService';
 import { runInstrumentedInput, getConventionFor } from '../../core/complexity/counters/engine';
 import { SpaceAnalyzer } from '../../core/complexity/space/SpaceAnalyzer';
+import { ComplexityContextPublisher } from '../components/ai/AIContextPublisher';
 import type { InstrumentedRunResult } from '../../core/complexity/counters/engine';
 
 type AnalysisTab = 'theory' | 'operations' | 'space' | 'learn';
@@ -122,6 +123,9 @@ export const ComplexityAnalyzerPage: FunctionComponent<ComplexityAnalyzerProps> 
         color: COLORS.textPrimary,
       } as React.CSSProperties}
     >
+      {/* The analysis is available as context for the assistant. */}
+      <ComplexityContextPublisher algorithm={algorithm} run={run} />
+
       <Flex justify="between" align="start" style={{ flexWrap: 'wrap', gap: SPACING.md } as React.CSSProperties}>
         <Box>
           <Text as="h1" style={{ ...TYPOGRAPHY.h1, color: COLORS.textPrimary, margin: 0 } as React.CSSProperties}>

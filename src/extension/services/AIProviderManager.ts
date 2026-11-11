@@ -4,6 +4,7 @@ import type { AIProvider } from '../../core/ai/AIProvider';
 import { OpenAIProvider } from '../../core/ai/providers/OpenAIProvider';
 import { GeminiProvider } from '../../core/ai/providers/GeminiProvider';
 import { LocalKnowledgeProvider } from '../../core/ai/providers/LocalKnowledgeProvider';
+import { LocalLLMProvider } from '../../core/ai/providers/LocalLLMProvider';
 import { AISecretStorage } from './AISecretStorage';
 import { validateAIConfiguration } from '../../core/ai/AIConfiguration';
 import { DEFAULT_AI_CONFIGURATION } from '../../core/ai/types';
@@ -23,6 +24,7 @@ import type {
 export class AIProviderManager {
   private readonly registry = new ProviderRegistry();
   private readonly providers: AIProvider[];
+  private readonly localLLM = new LocalLLMProvider();
 
   constructor(
     private readonly storage: AISecretStorage
@@ -31,6 +33,7 @@ export class AIProviderManager {
       new LocalKnowledgeProvider(),
       new OpenAIProvider(),
       new GeminiProvider(),
+      this.localLLM,
     ];
     for (const provider of this.providers) {
       this.registry.register(provider);
@@ -61,6 +64,11 @@ export class AIProviderManager {
       allowExternalContext: settings.get<boolean>(
         'allowExternalContext',
         DEFAULT_AI_CONFIGURATION.allowExternalContext
+      ),
+      streaming: settings.get<boolean>('streaming', DEFAULT_AI_CONFIGURATION.streaming),
+      localBaseUrl: settings.get<string>(
+        'localBaseUrl',
+        DEFAULT_AI_CONFIGURATION.localBaseUrl
       ),
     };
   }
@@ -96,6 +104,8 @@ export class AIProviderManager {
       merged.allowExternalContext,
       vscode.ConfigurationTarget.Global
     );
+    await settings.update('streaming', merged.streaming, vscode.ConfigurationTarget.Global);
+    await settings.update('localBaseUrl', merged.localBaseUrl, vscode.ConfigurationTarget.Global);
 
     return merged;
   }
@@ -105,8 +115,23 @@ export class AIProviderManager {
     const hasKey = async (id: AIProviderId): Promise<boolean> =>
       this.storage.hasApiKey(id);
 
+    const config = this.getConfiguration();
+
     return Promise.all(
-      this.registry.list().map(async (provider) => provider.getStatus(await hasKey(provider.id)))
+      this.registry.list().map(async (provider) => {
+        const status = provider.getStatus(await hasKey(provider.id));
+
+        if (provider.id === 'local-llm') {
+          // The endpoint and the models of a running local server.
+          status.endpoint = config.localBaseUrl;
+          const models = await this.localLLM.listModels(config.localBaseUrl);
+          if (models.length > 0) {
+            status.models = models;
+          }
+        }
+
+        return status;
+      })
     );
   }
 

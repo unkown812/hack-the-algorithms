@@ -14,12 +14,15 @@ import {
   AIProviderSettings,
   AIQuickActions,
 } from '../components/ai/AIProviderSettings';
+import { AIQuestionReview } from '../components/ai/AIQuestionReview';
+import { aiContextRegistry, type PublishedContext } from '../services/aiContextRegistry';
 import type {
   AIConversation,
   AIContextItem,
   AIMessage as AIMessageModel,
   AIProviderConfig,
   AIProviderStatus,
+  AIQuestionDraft,
   ExplanationMode,
 } from '../../core/ai/types';
 import type { ContextSelection } from '../../core/ai/AIContextBuilder';
@@ -78,6 +81,14 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [contextDraft, setContextDraft] = useState<ContextDraft>({ items: [], selection: {} });
   const [includeProgress, setIncludeProgress] = useState(false);
+  /** The context the other pages of the extension make available. */
+  const [availableContext, setAvailableContext] = useState<PublishedContext[]>([]);
+  /** The text of the answer that is currently streamed. */
+  const [streamingText, setStreamingText] = useState('');
+  /** The drafts of the review workflow. */
+  const [drafts, setDrafts] = useState<AIQuestionDraft[]>([]);
+  const [showReview, setShowReview] = useState(false);
+  const [rejectedDrafts, setRejectedDrafts] = useState<Array<{ title: string; issues: string[] }>>([]);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -110,6 +121,27 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
       case 'AI_RESPONSE_STARTED': {
         setBusy(true);
         setRequestId(String(payload.requestId ?? ''));
+        setStreamingText('');
+        break;
+      }
+      case 'AI_CHUNK': {
+        // A piece of the answer that is being generated.
+        const text = String(payload.text ?? '');
+        if (text) {
+          setStreamingText((previous) => previous + text);
+        }
+        break;
+      }
+      case 'AI_QUESTION_DRAFTS': {
+        setDrafts((payload.drafts as AIQuestionDraft[]) ?? []);
+        if (Array.isArray(payload.rejected)) {
+          setRejectedDrafts(
+            payload.rejected as Array<{ title: string; issues: string[] }>
+          );
+        }
+        if (typeof payload.created === 'number' && payload.created > 0) {
+          setShowReview(true);
+        }
         break;
       }
       case 'AI_RESPONSE': {
@@ -131,6 +163,8 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
             },
           ]);
         }
+        // The streamed text is now part of the final message.
+        setStreamingText('');
         if (payload.contextWithheld === true) {
           setMessages((previous) => [
             ...previous,
@@ -152,6 +186,7 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
       case 'AI_ERROR': {
         setBusy(false);
         setRequestId(undefined);
+        setStreamingText('');
         const text = String(payload.message ?? 'The request failed.');
         setMessages((previous) => [
           ...previous,
@@ -189,6 +224,19 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
   useAIMessages(handleMessages);
 
   /**
+   * The pages of the extension publish what the student is looking at.
+   * The items become *available* here — the student attaches them explicitly.
+   */
+  useEffect(() => {
+    setAvailableContext(aiContextRegistry.list());
+    return aiContextRegistry.subscribe(setAvailableContext);
+  }, []);
+
+  useEffect(() => {
+    aiApi.getQuestionDrafts();
+  }, []);
+
+  /**
    * An editor command (Explain Selected Code, Find Potential Bugs, …) hands
    * the selection over. The code becomes an explicit context item — the
    * student can still remove it before sending.
@@ -210,7 +258,9 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
           source: 'User selection',
         },
       ],
-      selection: { code, codeFileName: fileName },
+      // The code is already in the items — it is not added a second time
+      // through the structured selection.
+      selection: {},
     });
 
     setDraft(
@@ -253,8 +303,12 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
     ]);
     setDraft('');
     setSuggestions([]);
+    setStreamingText('');
 
     const selection: ContextSelection = { ...contextDraft.selection, ...extraSelection };
+
+    // The attached context items are sent as they are.
+    selection.items = contextDraft.items;
 
     aiApi.ask({
       question: trimmed,
@@ -265,6 +319,35 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
       selection,
       includeProgress,
     });
+  };
+
+  /** Attaches an item of the available context. */
+  const attachContext = (id: string): void => {
+    const item = availableContext.find((entry) => entry.id === id);
+    if (!item) {
+      return;
+    }
+    setContextDraft((previous) => ({
+      ...previous,
+      items: [
+        ...previous.items,
+        {
+          id: item.id,
+          kind: item.kind,
+          label: item.label,
+          content: item.content,
+          source: item.source,
+        },
+      ],
+    }));
+  };
+
+  /** Removes an attached item. */
+  const detachContext = (id: string): void => {
+    setContextDraft((previous) => ({
+      items: previous.items.filter((item) => item.id !== id),
+      selection: previous.selection,
+    }));
   };
 
   const handleNewChat = () => {
@@ -322,10 +405,29 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
             </Flex>
           </Box>
         </Flex>
-        <Button variant="secondary" size="sm" onClick={() => setShowSettings((value) => !value)}>
-          Settings
-        </Button>
+        <Flex gap={SPACING.sm}>
+          <Button variant="secondary" size="sm" onClick={() => setShowReview((value) => !value)}>
+            Review questions{drafts.filter((draft) => draft.status === 'pending').length > 0
+              ? ` (${drafts.filter((draft) => draft.status === 'pending').length})`
+              : ''}
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => setShowSettings((value) => !value)}>
+            Settings
+          </Button>
+        </Flex>
       </Flex>
+
+      {showReview && (
+        <AIQuestionReview
+          drafts={drafts}
+          rejected={rejectedDrafts}
+          onApprove={(draftId) => aiApi.reviewDraft(draftId, 'approve')}
+          onReject={(draftId) => aiApi.reviewDraft(draftId, 'reject')}
+          onDelete={(draftId) => aiApi.deleteDraft(draftId)}
+          onClearRejected={() => aiApi.clearRejectedDrafts()}
+          onClose={() => setShowReview(false)}
+        />
+      )}
 
       {showSettings && (
         <AIProviderSettings
@@ -404,7 +506,20 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
             {messages.map((message) => (
               <AIMessageView key={message.id} message={message} />
             ))}
-            {busy && (
+            {busy && streamingText && (
+              <Box style={{ marginBottom: SPACING.md, paddingLeft: 40 }}>
+                <AIMessageView
+                  message={{
+                    id: 'streaming',
+                    role: 'assistant',
+                    content: streamingText,
+                    createdAt: Date.now(),
+                    mode,
+                  }}
+                />
+              </Box>
+            )}
+            {busy && !streamingText && (
               <Flex align="center" gap={SPACING.sm} style={{ marginBottom: SPACING.md, paddingLeft: 40 }}>
                 <Text as="span" style={{ color: COLORS.accent }} className="daa-ai-typing">
                   ●
@@ -434,18 +549,20 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
       >
         <AIContextPanel
           items={contextDraft.items}
+          available={availableContext.map((item) => ({
+            id: item.id,
+            label: item.label,
+            source: item.source,
+            origin: item.origin,
+          }))}
+          onAttach={attachContext}
           withheld={Boolean(
             config &&
             statuses.find((status) => status.id === config.provider)?.isExternal &&
             !config.allowExternalContext &&
             contextDraft.items.some((item) => item.kind !== 'documentation')
           )}
-          onRemove={(id) =>
-            setContextDraft((previous) => ({
-              items: previous.items.filter((item) => item.id !== id),
-              selection: {},
-            }))
-          }
+          onRemove={detachContext}
         />
         <Flex gap={SPACING.sm} align="end" style={{ padding: SPACING.md }}>
           <Box style={{ flex: 1 }}>

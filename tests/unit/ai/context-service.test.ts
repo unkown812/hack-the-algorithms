@@ -448,6 +448,79 @@ describe('AI service', () => {
     expect(service.conversations.messages(result.conversationId)).toHaveLength(2);
   });
 
+  it('streams the answer when the provider supports it', async () => {
+    const chunks: string[] = [];
+    const provider = stubProvider({
+      supportsStreaming: true,
+      stream: vi.fn(async (_request, _config, _apiKey, onChunk) => {
+        onChunk({ text: 'Merge ' });
+        onChunk({ text: 'sort ' });
+        onChunk({ text: 'divides the array.' });
+        onChunk({ text: '', done: true });
+        return {
+          content: 'Merge sort divides the array.',
+          provider: 'openai',
+          model: 'test-model',
+          sources: [],
+          fromKnowledgeBase: false,
+          durationMs: 1,
+          usedContext: [],
+        };
+      }),
+    });
+
+    const service = new AIService(
+      () => ({ provider, apiKey: 'key' }),
+      () => config({ streaming: true })
+    );
+
+    const result = await service.ask({
+      question: 'Explain merge sort.',
+      onChunk: (chunk) => chunks.push(chunk.text),
+    });
+
+    expect(result.streamed).toBe(true);
+    expect(chunks.join('')).toBe('Merge sort divides the array.');
+    expect(provider.stream).toHaveBeenCalled();
+  });
+
+  it('does not stream when the configuration disables it', async () => {
+    const provider = stubProvider({
+      supportsStreaming: true,
+      stream: vi.fn(),
+    });
+
+    const service = new AIService(
+      () => ({ provider, apiKey: 'key' }),
+      () => config({ streaming: false })
+    );
+
+    const result = await service.ask({
+      question: 'Explain merge sort.',
+      onChunk: () => undefined,
+    });
+
+    expect(result.streamed).toBe(false);
+    expect(provider.stream).not.toHaveBeenCalled();
+  });
+
+  it('does not stream without a chunk callback', async () => {
+    const provider = stubProvider({
+      supportsStreaming: true,
+      stream: vi.fn(),
+    });
+
+    const service = new AIService(
+      () => ({ provider, apiKey: 'key' }),
+      () => config({ streaming: true })
+    );
+
+    const result = await service.ask({ question: 'Explain merge sort.' });
+
+    expect(result.streamed).toBe(false);
+    expect(provider.stream).not.toHaveBeenCalled();
+  });
+
   it('suggests questions, including one for the current algorithm', () => {
     const service = new AIService(() => undefined, () => config());
     const suggestions = service.getSuggestions({ algorithmId: 'merge-sort' });

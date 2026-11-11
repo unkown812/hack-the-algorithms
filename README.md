@@ -126,6 +126,14 @@ See [`docs/PHASE6.md`](docs/PHASE6.md) for the question catalogue, the scoring r
 
 See [`docs/PHASE7.md`](docs/PHASE7.md) for the architecture, the privacy rules and the limitations.
 
+### Phase 7.1 Features (Complete)
+
+- **Streaming answers** — the text appears while the model writes it; the request can be stopped at any time
+- **Semantic retrieval** — a local embedding index finds the right material even when your question uses different words; the exact match always wins
+- **Local model provider** — talk to a model server on your own machine (Ollama compatible): no API key, and the request never leaves the computer
+- **Automatic context** — the algorithm, the current visualization step, your playground program, the compiler diagnostics, the last run and the complexity analysis are offered as attachable context
+- **Review workflow for generated questions** — generated questions are validated and shown for approval; only an approved question is used in a quiz, and the verified question bank stays untouched
+
 ---
 
 ## C DAA Practicals

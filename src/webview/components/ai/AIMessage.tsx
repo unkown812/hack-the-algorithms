@@ -251,10 +251,17 @@ export const AIContextPanel: FunctionComponent<{
   items: Array<{ id: string; label: string; kind: string; source?: string }>;
   onRemove: (id: string) => void;
   withheld?: boolean;
-}> = ({ items, onRemove, withheld }) => {
-  if (items.length === 0) {
+  /** The context the pages of the extension make available. */
+  available?: Array<{ id: string; label: string; source?: string; origin: string }>;
+  onAttach?: (id: string) => void;
+}> = ({ items, onRemove, withheld, available = [], onAttach }) => {
+  if (items.length === 0 && available.length === 0) {
     return null;
   }
+
+  const attachedIds = new Set(items.map((item) => item.id));
+  const attachable = available.filter((item) => !attachedIds.has(item.id));
+
   return (
     <Box
       style={{
@@ -263,43 +270,74 @@ export const AIContextPanel: FunctionComponent<{
         backgroundColor: COLORS.surface,
       } as React.CSSProperties}
     >
-      <Flex align="center" gap={SPACING.xs} wrap="wrap">
-        <Text
-          as="span"
-          style={{ ...TYPOGRAPHY.small, fontSize: '0.7rem', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' } as React.CSSProperties}
-        >
-          Context:
-        </Text>
-        {items.map((item) => (
-          <Flex
-            key={item.id}
-            align="center"
-            gap={SPACING.xs}
-            style={{
-              backgroundColor: COLORS.surfaceElevated,
-              border: `1px solid ${COLORS.border}`,
-              borderRadius: RADIUS.xl,
-              padding: '0.15rem 0.5rem',
-            } as React.CSSProperties}
+      {attachable.length > 0 && onAttach && (
+        <Flex align="center" gap={SPACING.xs} wrap="wrap" style={{ marginBottom: SPACING.xs }}>
+          <Text
+            as="span"
+            style={{ ...TYPOGRAPHY.small, fontSize: '0.7rem', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' } as React.CSSProperties}
           >
-            <Text as="span" style={{ fontSize: '0.75rem', color: COLORS.textSecondary }}>
-              {item.label}
-            </Text>
-            <Box
-              onClick={() => onRemove(item.id)}
-              style={{ cursor: 'pointer', color: COLORS.textMuted, fontSize: '0.7rem' } as React.CSSProperties}
-              title={`Remove — ${item.source ?? item.kind}`}
-            >
-              ✕
-            </Box>
-          </Flex>
-        ))}
-        {withheld && (
-          <Text as="span" style={{ ...TYPOGRAPHY.small, fontSize: '0.7rem', color: COLORS.warning } as React.CSSProperties}>
-            (not sent — external provider without consent)
+            Available:
           </Text>
-        )}
-      </Flex>
+          {attachable.map((item) => (
+            <Box
+              key={item.id}
+              onClick={() => onAttach(item.id)}
+              title={`Attach — ${item.source ?? item.origin}`}
+              style={{
+                cursor: 'pointer',
+                backgroundColor: 'transparent',
+                border: `1px dashed ${COLORS.border}`,
+                borderRadius: RADIUS.xl,
+                padding: '0.15rem 0.5rem',
+                color: COLORS.textSecondary,
+                fontSize: '0.75rem',
+              } as React.CSSProperties}
+            >
+              + {item.label}
+            </Box>
+          ))}
+        </Flex>
+      )}
+
+      {items.length > 0 && (
+        <Flex align="center" gap={SPACING.xs} wrap="wrap">
+          <Text
+            as="span"
+            style={{ ...TYPOGRAPHY.small, fontSize: '0.7rem', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' } as React.CSSProperties}
+          >
+            Context:
+          </Text>
+          {items.map((item) => (
+            <Flex
+              key={item.id}
+              align="center"
+              gap={SPACING.xs}
+              style={{
+                backgroundColor: COLORS.surfaceElevated,
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: RADIUS.xl,
+                padding: '0.15rem 0.5rem',
+              } as React.CSSProperties}
+            >
+              <Text as="span" style={{ fontSize: '0.75rem', color: COLORS.textSecondary }}>
+                {item.label}
+              </Text>
+              <Box
+                onClick={() => onRemove(item.id)}
+                style={{ cursor: 'pointer', color: COLORS.textMuted, fontSize: '0.7rem' } as React.CSSProperties}
+                title={`Remove — ${item.source ?? item.kind}`}
+              >
+                ✕
+              </Box>
+            </Flex>
+          ))}
+          {withheld && (
+            <Text as="span" style={{ ...TYPOGRAPHY.small, fontSize: '0.7rem', color: COLORS.warning } as React.CSSProperties}>
+              (not sent — external provider without consent)
+            </Text>
+          )}
+        </Flex>
+      )}
     </Box>
   );
 };

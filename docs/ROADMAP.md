@@ -102,6 +102,14 @@
 - [x] Editor context-menu commands for selected code (explain, pseudocode, bugs, improvements, complexity, documentation)
 - [x] 89 new unit tests with mocked providers (no real API calls in CI)
 
+## Phase 7.1: AI Follow-up — Streaming, Retrieval, Local Models, Review (Complete)
+
+- [x] Streaming answers for OpenAI, Gemini and the local model server with cancellation
+- [x] Local embedding index with a hybrid keyword/semantic ranking
+- [x] Local model provider (Ollama compatible) without an API key
+- [x] Automatic context binding from the visualizer, the playground and the analyzer
+- [x] Review workflow for generated questions with approval, rejection and validation
+
 ## Phase 8: Practice & Assessment Extensions
 
 - [ ] Interactive quizzes and assessments with a larger question bank

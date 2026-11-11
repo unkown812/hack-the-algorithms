@@ -1,6 +1,12 @@
 import { AIProviderError } from '../AIProvider';
 import type { AIProvider } from '../AIProvider';
+import {
+  createRequestControl,
+  readEventStream,
+  toProviderError,
+} from './streamUtils';
 import type {
+  AIChunk,
   AIProviderConfig,
   AIProviderStatus,
   AIRequest,
@@ -21,6 +27,7 @@ export class GeminiProvider implements AIProvider {
   readonly name = 'Google Gemini';
   readonly requiresKey = true;
   readonly isExternal = true;
+  readonly supportsStreaming = true;
   readonly defaultModel = 'gemini-2.0-flash';
   readonly models = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash'];
   readonly documentationUrl = 'https://ai.google.dev/gemini-api/docs';
@@ -35,6 +42,7 @@ export class GeminiProvider implements AIProvider {
       requiresKey: this.requiresKey,
       isExternal: this.isExternal,
       documentationUrl: this.documentationUrl,
+      supportsStreaming: this.supportsStreaming,
     };
   }
 
@@ -50,22 +58,11 @@ export class GeminiProvider implements AIProvider {
     const model = config.model || this.defaultModel;
     const startedAt = Date.now();
 
-    const contents = [
-      ...this.buildContextContents(request),
-      ...request.messages
-        .filter((message) => message.role !== 'system')
-        .slice(-config.maxContextMessages)
-        .map((message) => ({
-          role: message.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: message.content }],
-        })),
-    ];
-
     const data = await this.request(
       `${BASE}/${model}:generateContent`,
       apiKey,
       {
-        contents,
+        contents: this.buildContents(request, config),
         generationConfig: {
           temperature: config.temperature,
           maxOutputTokens: config.maxTokens,
@@ -98,6 +95,98 @@ export class GeminiProvider implements AIProvider {
       durationMs: Date.now() - startedAt,
       usedContext: request.context,
     };
+  }
+
+  /**
+   * Sends the request and delivers the answer piece by piece.
+   * The streaming endpoint of Gemini answers with server-sent events.
+   */
+  async stream(
+    request: AIRequest,
+    config: AIProviderConfig,
+    apiKey: string | undefined,
+    onChunk: (chunk: AIChunk) => void
+  ): Promise<AIResponse> {
+    if (!apiKey) {
+      throw new AIProviderError('not-configured', 'No API key is stored for Gemini.');
+    }
+
+    const model = config.model || this.defaultModel;
+    const startedAt = Date.now();
+
+    const { controller, dispose } = createRequestControl(request.signal, config.timeoutMs);
+
+    try {
+      const response = await fetch(
+        `${BASE}/${model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: this.buildContents(request, config),
+            generationConfig: {
+              temperature: config.temperature,
+              maxOutputTokens: config.maxTokens,
+            },
+            systemInstruction: { parts: [{ text: request.systemPrompt }] },
+          }),
+          signal: controller.signal,
+        }
+      );
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw this.mapError(response.status, text);
+      }
+
+      const content = (
+        await readEventStream(response, { onText: (text) => onChunk({ text }) }, (payload) => {
+          const data = payload as {
+            candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+          };
+          const parts = data.candidates?.[0]?.content?.parts ?? [];
+          const text = parts.map((part) => part.text ?? '').join('');
+          return text === '' ? undefined : text;
+        })
+      ).trim();
+
+      onChunk({ text: '', done: true });
+
+      if (content === '') {
+        throw new AIProviderError('empty-response', 'The provider returned an empty answer.');
+      }
+
+      return {
+        content,
+        provider: this.id,
+        model,
+        sources: [],
+        fromKnowledgeBase: false,
+        durationMs: Date.now() - startedAt,
+        usedContext: request.context,
+      };
+    } catch (error) {
+      throw toProviderError(error, request.signal);
+    } finally {
+      dispose();
+    }
+  }
+
+  /** Builds the contents of the request. */
+  private buildContents(
+    request: AIRequest,
+    config: AIProviderConfig
+  ): Array<{ role: string; parts: Array<{ text: string }> }> {
+    return [
+      ...this.buildContextContents(request),
+      ...request.messages
+        .filter((message) => message.role !== 'system')
+        .slice(-config.maxContextMessages)
+        .map((message) => ({
+          role: message.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: message.content }],
+        })),
+    ];
   }
 
   private buildContextContents(request: AIRequest): Array<{

@@ -13,6 +13,7 @@ import {
 } from '../components/visualization';
 import { useVisualization } from '../hooks';
 import { visualizationEngine } from '../../core/visualization/generators';
+import { AIContextPublisher } from '../components/ai/AIContextPublisher';
 
 type Props = {
   algorithm: Algorithm | undefined;
@@ -114,6 +115,15 @@ export const AlgorithmVisualizer: FunctionComponent<Props> = ({
         color: COLORS.textPrimary,
       } as React.CSSProperties}
     >
+      {/* The current step is available as context for the assistant. */}
+      <AIContextPublisher
+        algorithm={algorithm}
+        step={currentStep}
+        stepIndex={currentStepIndex}
+        totalSteps={totalSteps}
+        origin="visualizer"
+      />
+
       <Box style={{ marginBottom: SPACING.lg }}>
         <Button variant="ghost" onClick={onBack}>
           ← Back to {algorithm.name} Details

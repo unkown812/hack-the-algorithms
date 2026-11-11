@@ -14,6 +14,7 @@ import { getAllAlgorithms, getAlgorithmById } from '../../core/algorithms';
 import { PlaygroundMessageHandler } from '../playground/message-handler';
 import { PracticeMessageHandler } from '../practice/message-handler';
 import { AIMessageHandler, getSelectedCode } from '../ai/message-handler';
+import { ApprovedQuestionService } from '../services/ApprovedQuestionService';
 
 /** Message types that belong to the Phase 5 Code Playground. */
 const PLAYGROUND_MESSAGE_SET = new Set<string>([
@@ -133,6 +134,10 @@ async function exportReport(
 function openDashboard(context: vscode.ExtensionContext, openView?: string): void {
   const column = vscode.ViewColumn.One;
 
+  // The reviewed questions of the student are shared by the assistant and
+  // the practice centre.
+  const approvedQuestions = new ApprovedQuestionService(context);
+
   if (dashboardPanel) {
     dashboardPanel.reveal(column);
     if (openView) {
@@ -161,11 +166,11 @@ function openDashboard(context: vscode.ExtensionContext, openView?: string): voi
 
   const practice = new PracticeMessageHandler(context, (message) => {
     dashboardPanel?.webview.postMessage(message);
-  });
+  }, () => approvedQuestions.getQuestions());
 
   const assistant = new AIMessageHandler(context, (message) => {
     dashboardPanel?.webview.postMessage(message);
-  });
+  }, approvedQuestions);
 
   dashboardPanel.webview.onDidReceiveMessage(
     (message) => {

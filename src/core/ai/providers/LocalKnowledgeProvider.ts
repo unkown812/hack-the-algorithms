@@ -37,6 +37,7 @@ export class LocalKnowledgeProvider implements AIProvider {
       models: this.models,
       requiresKey: this.requiresKey,
       isExternal: this.isExternal,
+      supportsStreaming: false,
     };
   }
 

@@ -11,9 +11,10 @@ import type {
 import { AIProviderManager } from '../services/AIProviderManager';
 import { AISecretStorage } from '../services/AISecretStorage';
 import type { LearningData } from '../../core/practice/types';
-import { QuestionGenerator } from '../../core/ai/features/QuestionGenerator';
-import type { QuestionGeneratorRequest } from '../../core/ai/features/QuestionGenerator';
 import { PracticalAssistant } from '../../core/ai/features/PracticalAssistant';
+import { QuestionDraftService } from '../../core/ai/QuestionDraftService';
+import { ApprovedQuestionService } from '../services/ApprovedQuestionService';
+import type { AIQuestionRequest } from '../../core/ai/types';
 
 /**
  * Handles the Phase 7 messages of the AI learning assistant.
@@ -28,12 +29,14 @@ export class AIMessageHandler {
   private readonly storage: AISecretStorage;
   private readonly manager: AIProviderManager;
   private readonly service: AIService;
+  private readonly approvedQuestions: ApprovedQuestionService;
   private readonly requests = new Map<string, AbortController>();
   private readonly learningDataStore: { read(): LearningData | undefined };
 
   constructor(
     context: vscode.ExtensionContext,
-    private readonly post: (message: { type: string; payload?: unknown }) => void
+    private readonly post: (message: { type: string; payload?: unknown }) => void,
+    approvedQuestions?: ApprovedQuestionService
   ) {
     this.storage = new AISecretStorage(context.secrets);
     this.manager = new AIProviderManager(this.storage);
@@ -41,10 +44,16 @@ export class AIMessageHandler {
       this.manager.resolve,
       () => this.manager.getConfiguration()
     );
+    this.approvedQuestions = approvedQuestions ?? new ApprovedQuestionService(context);
 
     this.learningDataStore = {
       read: () => context.globalState.get('daa.learningData'),
     };
+  }
+
+  /** The drafts of the review workflow. */
+  private get drafts(): QuestionDraftService {
+    return this.approvedQuestions.drafts;
   }
 
   /** Handles one message of the webview. */
@@ -186,6 +195,41 @@ export class AIMessageHandler {
         break;
       }
 
+      case AI_MESSAGES.GET_QUESTION_DRAFTS: {
+        this.postDrafts();
+        break;
+      }
+
+      case AI_MESSAGES.REVIEW_QUESTION_DRAFT: {
+        const draftId = String(payload.draftId ?? '');
+        const action = String(payload.action ?? 'approve');
+
+        if (action === 'approve') {
+          this.drafts.approve(draftId);
+        } else {
+          this.drafts.reject(draftId, payload.note as string | undefined);
+        }
+
+        this.postDrafts({
+          reviewed: draftId,
+          action,
+          approvedCount: this.drafts.listApproved().length,
+        });
+        break;
+      }
+
+      case AI_MESSAGES.DELETE_QUESTION_DRAFT: {
+        this.drafts.remove(String(payload.draftId ?? ''));
+        this.postDrafts();
+        break;
+      }
+
+      case AI_MESSAGES.CLEAR_REJECTED_DRAFTS: {
+        const removed = this.drafts.clearRejected();
+        this.postDrafts({ removed });
+        break;
+      }
+
       default:
         break;
       }
@@ -225,6 +269,13 @@ export class AIMessageHandler {
         conversationId: payload.conversationId as string | undefined,
         selection,
         signal: controller.signal,
+        // The answer is delivered piece by piece when the provider supports it.
+        onChunk: (chunk) => {
+          this.post({
+            type: AI_MESSAGES.AI_CHUNK,
+            payload: { requestId, text: chunk.text, done: chunk.done },
+          });
+        },
       });
 
       this.post({
@@ -277,30 +328,69 @@ export class AIMessageHandler {
     });
   }
 
-  /** Generates practice questions from the verified question bank. */
+  /**
+   * Generates practice questions.
+   *
+   * The provider writes the questions, they are parsed and validated, and
+   * they are stored as *drafts*. A draft is not usable until the student
+   * approved it in the review workflow — the verified question bank of Phase 6
+   * is never modified.
+   */
   private async generateQuestions(payload: Record<string, unknown>): Promise<void> {
-    const mode = payload.mode as ExplanationMode | undefined;
-    const request = (payload.request ?? {}) as QuestionGeneratorRequest;
+    const request = (payload.request ?? {}) as AIQuestionRequest;
 
-    const built = new QuestionGenerator().build({ ...request, mode });
+    this.post({
+      type: AI_MESSAGES.AI_RESPONSE_STARTED,
+      payload: { requestId: 'question-generation' },
+    });
 
-    // The verified questions that match the request — sent as context.
-    const questions = new QuestionGenerator().getValidQuestions(request);
-    const questionPreview = questions
-      .slice(0, 5)
-      .map((question) => `- ${question.title}: ${question.question} (answer: ${question.correctAnswer})`)
-      .join('\n');
+    try {
+      const result = await this.service.generateQuestions(request);
 
-    const fullQuestion = questionPreview
-      ? `${built.question}\n\nQuestions from the verified bank that match the request:\n${questionPreview}`
-      : built.question;
+      if (result.candidates.length === 0) {
+        this.post({
+          type: AI_MESSAGES.AI_ERROR,
+          payload: {
+            message:
+              result.warnings[0] ??
+              'The provider did not return any usable questions. The raw answer is shown in the chat.',
+          },
+        });
+        this.post({
+          type: AI_MESSAGES.AI_QUESTION_DRAFTS,
+          payload: { drafts: this.drafts.list() },
+        });
+        return;
+      }
 
-    await this.ask({
-      ...payload,
-      question: fullQuestion,
-      task: built.task,
-      mode,
-      conversationId: payload.conversationId as string | undefined,
+      const provider = this.manager.getConfiguration().provider;
+      const stored = this.drafts.add(result.candidates, provider, request);
+
+      this.post({
+        type: AI_MESSAGES.AI_QUESTION_DRAFTS,
+        payload: {
+          drafts: this.drafts.list(),
+          created: stored.drafts.length,
+          rejected: stored.rejected.map((entry) => ({
+            title: entry.candidate.title ?? 'Untitled',
+            issues: entry.issues.map((issue) => issue.message),
+          })),
+          warnings: result.warnings,
+        },
+      });
+    } catch (error) {
+      this.post({
+        type: AI_MESSAGES.AI_ERROR,
+        payload: { message: describe(error) },
+      });
+    }
+  }
+
+  /** Sends the drafts to the webview. */
+  private postDrafts(extra: Record<string, unknown> = {}): void {
+    this.post({
+      type: AI_MESSAGES.AI_QUESTION_DRAFTS,
+      payload: { drafts: this.drafts.list(), ...extra },
     });
   }
 

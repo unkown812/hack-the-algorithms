@@ -47,9 +47,19 @@ export class PracticeService {
   private readonly store: LearningDataStore;
   private readonly evaluator: ChallengeEvaluator;
   private readonly achievements = new AchievementService();
+  /**
+   * The reviewed questions of the student.
+   * They extend the verified bank — they never replace it.
+   */
+  private readonly extraQuestions: () => Question[];
 
-  constructor(store: LearningDataStore, executionService?: ExecutionService) {
+  constructor(
+    store: LearningDataStore,
+    executionService?: ExecutionService,
+    extraQuestions?: () => Question[]
+  ) {
     this.store = store;
+    this.extraQuestions = extraQuestions ?? (() => []);
     this.evaluator = new ChallengeEvaluator(
       executionService ?? new ExecutionService(new GCCCompiler(detectCompiler()))
     );
@@ -57,14 +67,35 @@ export class PracticeService {
 
   // --- question bank -------------------------------------------------------
 
-  /** The questions that match the filter. */
+  /** The questions that match the filter — the verified bank and the reviewed ones. */
   getQuestions(filter: QuestionFilter = {}): Question[] {
-    return filterQuestions(filter);
+    const verified = filterQuestions(filter);
+
+    const extra = this.extraQuestions().filter((question) => {
+      if (filter.category && question.category !== filter.category) {
+        return false;
+      }
+      if (filter.topic && question.topic !== filter.topic) {
+        return false;
+      }
+      if (filter.difficulty && question.difficulty !== filter.difficulty) {
+        return false;
+      }
+      if (filter.type && question.type !== filter.type) {
+        return false;
+      }
+      if (filter.ids && filter.ids.length > 0 && !filter.ids.includes(question.id)) {
+        return false;
+      }
+      return true;
+    });
+
+    return [...verified, ...extra];
   }
 
-  /** A single question. */
+  /** A single question — from the verified bank or from the reviewed ones. */
   getQuestion(id: string): Question | undefined {
-    return getQuestionById(id);
+    return getQuestionById(id) ?? this.extraQuestions().find((question) => question.id === id);
   }
 
   /** The problems of the question bank — used by the self check. */
@@ -74,7 +105,7 @@ export class PracticeService {
 
   /** Judges an answer without storing it. */
   evaluate(questionId: string, answer: string | string[] | undefined) {
-    const question = getQuestionById(questionId);
+    const question = this.getQuestion(questionId);
     if (!question) {
       return undefined;
     }
@@ -92,6 +123,7 @@ export class PracticeService {
   previewQuiz(config: QuizConfig): { questions: Question[]; scoring: string } {
     const built = buildQuiz(config, {
       preferIds: this.revisionQuestionIds(),
+      extraQuestions: this.extraQuestions(),
     });
     return {
       questions: built.questions,
@@ -101,7 +133,10 @@ export class PracticeService {
 
   /** Starts a quiz and stores the attempt as "in progress". */
   startQuiz(config: QuizConfig): { attempt: QuizAttempt; questions: QuizQuestion[]; scoring: string } {
-    const built = buildQuiz(config, { preferIds: this.revisionQuestionIds() });
+    const built = buildQuiz(config, {
+      preferIds: this.revisionQuestionIds(),
+      extraQuestions: this.extraQuestions(),
+    });
     const entries = createQuizQuestions(built.questions);
     const startedAt = Date.now();
 
@@ -136,7 +171,7 @@ export class PracticeService {
     questionId: string,
     answer: string | string[]
   ): { correct: boolean; explanation: string } | undefined {
-    const question = getQuestionById(questionId);
+    const question = this.getQuestion(questionId);
     if (!question) {
       return undefined;
     }
@@ -187,7 +222,7 @@ export class PracticeService {
 
     const config = this.getQuizConfig(attempt);
     const questions = attempt.questionIds
-      .map((id) => getQuestionById(id))
+      .map((id) => this.getQuestion(id))
       .filter((question): question is Question => question !== undefined);
 
     const entries: QuizQuestion[] = questions.map((question) => {
