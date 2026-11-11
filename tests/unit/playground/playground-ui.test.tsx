@@ -171,7 +171,7 @@ describe('playground components render', () => {
       file: 'program.c',
       line: 4,
       column: 9,
-      message: "expected ';' before 'return'",
+      message: 'expected \';\' before \'return\'',
       category: 'missing-semicolon',
       explanation: 'The compiler expected a semicolon.',
       suggestion: 'Add the missing semicolon.',

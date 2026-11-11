@@ -17,21 +17,29 @@ export interface ValidationResult {
   warnings: string[];
 }
 
-const FABRICATION_PATTERNS: Array<{ pattern: RegExp; warning: string }> = [
+const FABRICATION_PATTERNS: Array<{
+  pattern: RegExp;
+  warning: string;
+  /** The context kind that makes the claim acceptable. */
+  requires: 'execution' | 'complexity';
+}> = [
   {
     pattern: /\bI (compiled|ran|executed|tested) (the|your|this) (code|program)\b/i,
     warning:
       'The answer claims that the code was compiled or executed, but the shared context does not contain a compiler or execution result.',
+    requires: 'execution',
   },
   {
     pattern: /\bthe (measured|actual) (execution time|runtime) is \d/i,
     warning:
       'The answer states a measured running time, but the shared context does not contain a benchmark result.',
+    requires: 'complexity',
   },
   {
     pattern: /\bI (measured|counted) \d+ (comparisons|operations|swaps)\b/i,
     warning:
       'The answer states operation counts, but the shared context does not contain instrumented counts.',
+    requires: 'complexity',
   },
 ];
 
@@ -59,14 +67,14 @@ export class AIResponseValidator {
       (item) => item.kind === 'complexity' || item.kind === 'execution'
     );
 
-    for (const { pattern, warning } of FABRICATION_PATTERNS) {
+    for (const { pattern, warning, requires } of FABRICATION_PATTERNS) {
       if (!pattern.test(response.content)) {
         continue;
       }
-      if (warning.includes('compiled') && hasExecutionContext) {
+      if (requires === 'execution' && hasExecutionContext) {
         continue;
       }
-      if (warning.includes('measured') && hasMeasurementContext) {
+      if (requires === 'complexity' && hasMeasurementContext) {
         continue;
       }
       warnings.push(warning);

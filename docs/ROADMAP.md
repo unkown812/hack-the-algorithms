@@ -89,14 +89,27 @@
 - [x] Local, versioned and migratable progress persistence with export and reset
 - [x] Unit tests for the question bank, quizzes, challenges, practicals, progress and the webview
 
-## Phase 7: Practice & Assessment Extensions
+## Phase 7: AI Learning Assistant & Personalized DAA Tutor (Complete)
+
+- [x] Provider-independent AI service layer with the offline local knowledge base, OpenAI and Gemini providers
+- [x] Conversational learning interface with history, suggestions, markdown answers, sources and stop generation
+- [x] Seven explanation modes switchable mid-conversation
+- [x] Algorithm tutor, code explainer, debugging assistant, complexity tutor, visualization assistant
+- [x] Practical/viva assistant, question generator and personalized learning advisor built on the Phase 3/4/6 data
+- [x] Local keyword retrieval over the bundled verified corpus, independent of the provider
+- [x] Tutor system prompt and response validator that forbid fabricated results
+- [x] Secure API key storage in the VS Code SecretStorage with a consent gate for user-selected context
+- [x] Editor context-menu commands for selected code (explain, pseudocode, bugs, improvements, complexity, documentation)
+- [x] 89 new unit tests with mocked providers (no real API calls in CI)
+
+## Phase 8: Practice & Assessment Extensions
 
 - [ ] Interactive quizzes and assessments with a larger question bank
 - [ ] DAA practical preparation mode with an exam simulator
 - [ ] Learning progress tracking across workspaces
 - [ ] C++, Python, and Java language support
 
-## Phase 8: Polish & Distribution
+## Phase 9: Polish & Distribution
 
 - [ ] VS Code Marketplace publication
 - [ ] Performance optimization (Web Workers for large inputs)

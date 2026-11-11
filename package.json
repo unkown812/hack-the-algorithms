@@ -2,7 +2,7 @@
   "name": "hack-the-algorithms",
   "displayName": "Hack The Algorithms",
   "description": "An interactive algorithm learning and visualization companion for Visual Studio Code.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": "ukown812",
   "publisher": "ukown812",
   "repository": {
@@ -46,6 +46,45 @@
       {
         "command": "daa-companion.openPractice",
         "title": "DAA Companion: Practice Centre"
+      },
+      {
+        "command": "daa-companion.openAIAssistant",
+        "title": "DAA Companion: AI Learning Assistant"
+      },
+      {
+        "command": "daa-companion.ai.explainSelection",
+        "title": "DAA AI: Explain Selected Code",
+        "category": "DAA AI Assistant"
+      },
+      {
+        "command": "daa-companion.ai.explainFunction",
+        "title": "DAA AI: Explain This Function",
+        "category": "DAA AI Assistant"
+      },
+      {
+        "command": "daa-companion.ai.generatePseudocode",
+        "title": "DAA AI: Generate Pseudocode",
+        "category": "DAA AI Assistant"
+      },
+      {
+        "command": "daa-companion.ai.findBugs",
+        "title": "DAA AI: Find Potential Bugs",
+        "category": "DAA AI Assistant"
+      },
+      {
+        "command": "daa-companion.ai.suggestImprovements",
+        "title": "DAA AI: Suggest Improvements",
+        "category": "DAA AI Assistant"
+      },
+      {
+        "command": "daa-companion.ai.explainComplexity",
+        "title": "DAA AI: Explain Complexity",
+        "category": "DAA AI Assistant"
+      },
+      {
+        "command": "daa-companion.ai.generateDocumentation",
+        "title": "DAA AI: Generate Documentation",
+        "category": "DAA AI Assistant"
       }
     ],
     "viewsContainers": {
@@ -64,6 +103,100 @@
           "name": "Algorithm Explorer"
         }
       ]
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "daa-companion.ai.explainSelection",
+          "group": "daa-ai@1"
+        },
+        {
+          "command": "daa-companion.ai.explainFunction",
+          "group": "daa-ai@2"
+        },
+        {
+          "command": "daa-companion.ai.generatePseudocode",
+          "group": "daa-ai@3"
+        },
+        {
+          "command": "daa-companion.ai.findBugs",
+          "group": "daa-ai@4"
+        },
+        {
+          "command": "daa-companion.ai.suggestImprovements",
+          "group": "daa-ai@5"
+        },
+        {
+          "command": "daa-companion.ai.explainComplexity",
+          "group": "daa-ai@6"
+        },
+        {
+          "command": "daa-companion.ai.generateDocumentation",
+          "group": "daa-ai@7"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "DAA Companion — AI Assistant",
+      "properties": {
+        "daaCompanion.ai.provider": {
+          "type": "string",
+          "enum": [
+            "local",
+            "openai",
+            "gemini"
+          ],
+          "default": "local",
+          "description": "AI provider used by the DAA learning assistant. \"local\" answers from the bundled learning resources and needs no key."
+        },
+        "daaCompanion.ai.model": {
+          "type": "string",
+          "default": "",
+          "description": "Model id for the provider. Empty uses the provider default."
+        },
+        "daaCompanion.ai.temperature": {
+          "type": "number",
+          "default": 0.4,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Sampling temperature of the provider."
+        },
+        "daaCompanion.ai.maxTokens": {
+          "type": "number",
+          "default": 1500,
+          "minimum": 64,
+          "description": "Maximum number of tokens per answer."
+        },
+        "daaCompanion.ai.timeoutMs": {
+          "type": "number",
+          "default": 60000,
+          "minimum": 1000,
+          "maximum": 300000,
+          "description": "Request timeout in milliseconds."
+        },
+        "daaCompanion.ai.maxContextMessages": {
+          "type": "number",
+          "default": 12,
+          "minimum": 1,
+          "description": "How many conversation messages are sent with every request."
+        },
+        "daaCompanion.ai.maxContextCharacters": {
+          "type": "number",
+          "default": 12000,
+          "minimum": 500,
+          "description": "Character budget of the shared context per request."
+        },
+        "daaCompanion.ai.useLocalResources": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include the bundled verified learning resources in the context."
+        },
+        "daaCompanion.ai.allowExternalContext": {
+          "type": "boolean",
+          "default": false,
+          "description": "Consent flag: user-selected context (code, execution results, diagnostics, progress) may be sent to an external provider. Never applies to the local provider."
+        }
+      }
     }
   },
   "scripts": {

@@ -5,6 +5,18 @@ export const EXTENSION_ID = 'daa-companion';
 export const COMMAND_OPEN_DASHBOARD = 'daa-companion.openDashboard';
 export const COMMAND_OPEN_ALGORITHM_LIBRARY = 'daa-companion.openAlgorithmLibrary';
 export const COMMAND_OPEN_PRACTICE = 'daa-companion.openPractice';
+export const COMMAND_OPEN_AI_ASSISTANT = 'daa-companion.openAIAssistant';
+
+/** Phase 7 — editor commands of the AI code explainer. */
+export const AI_EDITOR_COMMANDS = {
+  EXPLAIN_SELECTION: 'daa-companion.ai.explainSelection',
+  EXPLAIN_FUNCTION: 'daa-companion.ai.explainFunction',
+  GENERATE_PSEUDOCODE: 'daa-companion.ai.generatePseudocode',
+  FIND_BUGS: 'daa-companion.ai.findBugs',
+  SUGGEST_IMPROVEMENTS: 'daa-companion.ai.suggestImprovements',
+  EXPLAIN_COMPLEXITY: 'daa-companion.ai.explainComplexity',
+  GENERATE_DOCUMENTATION: 'daa-companion.ai.generateDocumentation',
+} as const;
 export const VIEW_EXPLORER_ID = 'daa-companion.explorer';
 export const VIEW_CONTAINER_ID = 'daa-companion';
 
@@ -173,4 +185,38 @@ export const PRACTICE_MESSAGES = {
   BOOKMARKS_LOADED: 'BOOKMARKS_LOADED',
   PROGRESS_LOADED: 'PROGRESS_LOADED',
   PRACTICE_ERROR: 'PRACTICE_ERROR',
+} as const;
+
+/**
+ * Phase 7 — AI learning assistant message protocol.
+ */
+export const AI_MESSAGES = {
+  // webview -> host
+  GET_AI_STATUS: 'GET_AI_STATUS',
+  SAVE_AI_CONFIG: 'SAVE_AI_CONFIG',
+  SET_API_KEY: 'SET_API_KEY',
+  CLEAR_API_KEY: 'CLEAR_API_KEY',
+  TEST_PROVIDER: 'TEST_PROVIDER',
+  ASK_ASSISTANT: 'ASK_ASSISTANT',
+  CANCEL_AI_REQUEST: 'CANCEL_AI_REQUEST',
+  GET_CONVERSATIONS: 'GET_CONVERSATIONS',
+  NEW_CONVERSATION: 'NEW_CONVERSATION',
+  OPEN_CONVERSATION: 'OPEN_CONVERSATION',
+  DELETE_CONVERSATION: 'DELETE_CONVERSATION',
+  CLEAR_CONVERSATIONS: 'CLEAR_CONVERSATIONS',
+  SET_CONVERSATION_MODE: 'SET_CONVERSATION_MODE',
+  GENERATE_VIVA: 'GENERATE_VIVA',
+  GENERATE_QUESTIONS: 'GENERATE_QUESTIONS',
+
+  // host -> webview
+  AI_STATUS: 'AI_STATUS',
+  AI_CONFIG_SAVED: 'AI_CONFIG_SAVED',
+  AI_KEY_SAVED: 'AI_KEY_SAVED',
+  AI_TEST_RESULT: 'AI_TEST_RESULT',
+  AI_RESPONSE: 'AI_RESPONSE',
+  AI_RESPONSE_STARTED: 'AI_RESPONSE_STARTED',
+  AI_ERROR: 'AI_ERROR',
+  AI_CONVERSATIONS: 'AI_CONVERSATIONS',
+  AI_CONVERSATION_LOADED: 'AI_CONVERSATION_LOADED',
+  AI_EDITOR_REQUEST: 'AI_EDITOR_REQUEST',
 } as const;

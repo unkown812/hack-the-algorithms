@@ -153,16 +153,16 @@ export class AIContextBuilder {
             : '',
           step.array?.comparedIndices?.length
             ? `Compared elements: ${step.array.comparedIndices
-                .map((index) => `${index} (${step.array?.values[index]})`)
-                .join(' and ')}`
+              .map((index) => `${index} (${step.array?.values[index]})`)
+              .join(' and ')}`
             : '',
           step.array?.swappedIndices?.length
             ? `Swapped elements: ${step.array.swappedIndices.join(', ')}`
             : '',
           step.variables && Object.keys(step.variables).length > 0
             ? `Variables: ${Object.entries(step.variables)
-                .map(([name, value]) => `${name} = ${String(value)}`)
-                .join(', ')}`
+              .map(([name, value]) => `${name} = ${String(value)}`)
+              .join(', ')}`
             : '',
         ]
           .filter(Boolean)
@@ -221,10 +221,7 @@ export class AIContextBuilder {
           `  Worst case: ${complexity.theoretical.worst}`,
           `  Auxiliary space: ${complexity.theoretical.auxiliary}`,
           complexity.instrumented
-            ? '',
-            : '',
-          complexity.instrumented
-            ? `Instrumented operation counts (deterministic, counted while the algorithm ran):`
+            ? 'Instrumented operation counts (deterministic, counted while the algorithm ran):'
             : '',
           complexity.instrumented
             ? `  Comparisons: ${complexity.instrumented.comparisons}`
@@ -232,9 +229,6 @@ export class AIContextBuilder {
           complexity.instrumented ? `  Exchanges: ${complexity.instrumented.swaps}` : '',
           complexity.instrumented
             ? `  Total counted operations: ${complexity.instrumented.totalOperations}`
-            : '',
-          complexity.measured
-            ? '',
             : '',
           complexity.measured
             ? `Measured running time (${complexity.measured.trials} trials in this environment):`

@@ -13,6 +13,7 @@ type Props = {
   onOpenLibrary: () => void;
   onOpenPlayground: () => void;
   onOpenPractice: () => void;
+  onOpenAIAssistant: () => void;
 };
 
 export const Dashboard = ({
@@ -21,6 +22,7 @@ export const Dashboard = ({
   onOpenLibrary,
   onOpenPlayground,
   onOpenPractice,
+  onOpenAIAssistant,
 }: Props) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -101,6 +103,9 @@ export const Dashboard = ({
           </Button>
           <Button variant="secondary" onClick={onOpenPractice}>
             Open Practice Centre
+          </Button>
+          <Button variant="secondary" onClick={onOpenAIAssistant}>
+            Ask the AI Assistant
           </Button>
           <Button variant="secondary" onClick={onOpenLibrary}>
             Study the C implementations

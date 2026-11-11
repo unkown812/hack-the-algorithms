@@ -80,17 +80,17 @@ export class VisualizationAssistant {
 
     const selection: ContextSelection = step
       ? {
-          visualization: {
-            algorithmId: step.algorithmId,
-            stepIndex: step.stepIndex,
-            description: step.description,
-            explanation: step.explanation,
-            operation: step.operation,
-            lineNumber: step.lineNumber,
-            array: step.array,
-            variables: step.variables,
-          },
-        }
+        visualization: {
+          algorithmId: step.algorithmId,
+          stepIndex: step.stepIndex,
+          description: step.description,
+          explanation: step.explanation,
+          operation: step.operation,
+          lineNumber: step.lineNumber,
+          array: step.array,
+          variables: step.variables,
+        },
+      }
       : {};
 
     const question =
@@ -133,8 +133,8 @@ export class VisualizationAssistant {
       step.array ? `Array: [${step.array.values.join(', ')}]` : '',
       step.array?.comparedIndices?.length
         ? `Compared: ${step.array.comparedIndices
-            .map((index) => `${index} (${step.array?.values[index]})`)
-            .join(' and ')}`
+          .map((index) => `${index} (${step.array?.values[index]})`)
+          .join(' and ')}`
         : '',
       step.array?.swappedIndices?.length
         ? `Exchanged: ${step.array.swappedIndices.join(', ')}`

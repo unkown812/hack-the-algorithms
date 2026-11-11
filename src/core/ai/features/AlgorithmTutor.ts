@@ -53,7 +53,7 @@ export class AlgorithmTutor {
     return [
       { id: 'why-works', text: `Why does ${name} work?` },
       { id: 'explain-line', text: `Explain this line of the ${name} implementation.` },
-      { id: 'other-input', text: `What happens if the input changes?` },
+      { id: 'other-input', text: 'What happens if the input changes?' },
       { id: 'better-approach', text: 'Is there a better approach for this problem?' },
       { id: 'worst-case', text: 'Why is the worst case different from the average case?' },
       { id: 'cases', text: 'What is the difference between the best, average and worst case?' },

@@ -108,6 +108,24 @@ See [`docs/PHASE5.md`](docs/PHASE5.md) for the architecture, the security model 
 
 See [`docs/PHASE6.md`](docs/PHASE6.md) for the question catalogue, the scoring rules and the limitations.
 
+### Phase 7 Features (Complete)
+
+- **AI Learning Assistant** — a conversational tutor reachable from the dashboard, the Activity Bar and the command palette
+- **Local knowledge base** — answers offline from the bundled verified material; no API key needed by default
+- **Three providers** — the local knowledge base, OpenAI and Gemini behind one provider interface; keys are stored in the VS Code SecretStorage and never reach the webview
+- **Seven explanation modes** — beginner, detailed, step-by-step, exam preparation, practical, interview and visual learning
+- **Algorithm tutor** — theory, pseudocode, implementation, complexity and common mistakes from the verified registry, with follow-up questions
+- **Code explainer** — seven editor context-menu commands that explain, annotate, criticise or document the selected code
+- **Debugging assistant** — explains the real compiler diagnostics and execution results of the playground instead of inventing them
+- **Complexity tutor** — interprets the Phase 4 analyzer results and keeps theoretical classes, instrumented counts and measured times apart
+- **Visualization assistant** — explains the current trace step and turns requests like "move to the next comparison" into the existing playback controls
+- **Practical & viva assistant** — practical papers, viva practice and mock exam guidance from the Phase 3/6 resources
+- **Question generator** — surfaces verified question-bank questions and validates their structure; nothing unverified is merged into the official bank
+- **Learning advisor** — explainable recommendations and a prerequisite roadmap based on your actual progress data
+- **Privacy by design** — context is attached explicitly, shown before sending, removable per item, and withheld from external providers without consent
+
+See [`docs/PHASE7.md`](docs/PHASE7.md) for the architecture, the privacy rules and the limitations.
+
 ---
 
 ## C DAA Practicals

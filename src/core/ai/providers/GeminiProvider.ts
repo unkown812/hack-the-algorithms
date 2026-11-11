@@ -181,6 +181,9 @@ export class GeminiProvider implements AIProvider {
     if (status === 401 || status === 403) {
       return new AIProviderError('invalid-key', 'The API key was rejected.');
     }
+    if (status === 404 && /not found/i.test(body)) {
+      return new AIProviderError('unsupported-model', 'The model is not supported.');
+    }
     if (status === 429) {
       return new AIProviderError('rate-limit', 'Too many requests.');
     }

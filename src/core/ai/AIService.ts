@@ -29,7 +29,9 @@ export interface ProviderAccess {
   apiKey?: string;
 }
 
-export type ProviderResolver = (id: AIProviderId) => ProviderAccess | undefined;
+export type ProviderResolver = (
+  id: AIProviderId
+) => Promise<ProviderAccess | undefined> | ProviderAccess | undefined;
 
 export interface AskRequest {
   question: string;
@@ -51,6 +53,8 @@ export interface AskResult {
   context: AIContextItem[];
   /** The conversation the answer was added to. */
   conversationId: string;
+  /** True when context was removed because the consent was missing. */
+  contextWithheld: boolean;
 }
 
 export class AIService {
@@ -68,8 +72,11 @@ export class AIService {
     const config = this.getConfiguration();
     const mode = request.mode ?? 'beginner';
 
+    // A stale id (for example after a host restart) must not lose the answer.
     const conversationId =
-      request.conversationId ?? this.conversations.create(mode).id;
+      request.conversationId && this.conversations.get(request.conversationId)
+        ? request.conversationId
+        : this.conversations.create(mode).id;
 
     const userMessage = this.conversations.addMessage(conversationId, {
       role: 'user',
@@ -79,27 +86,38 @@ export class AIService {
 
     const built = this.contextBuilder.build(request.selection ?? {}, request.question, config);
 
+    const access = await this.resolveProvider(config.provider);
+    if (!access) {
+      throw new AIProviderError('not-configured', 'The selected provider is not available.');
+    }
+
+    /**
+     * Privacy rule: user-selected context (code, execution results,
+     * diagnostics, progress) only leaves the machine when the student gave
+     * the explicit consent or the provider is local. The bundled learning
+     * resources are not personal data and may ground an external answer.
+     */
+    const contextWithheld =
+      access.provider.isExternal &&
+      !config.allowExternalContext &&
+      built.items.some((item) => item.kind !== 'documentation');
+
+    const contextToSend = contextWithheld
+      ? built.items.filter((item) => item.kind === 'documentation')
+      : built.items;
+
     const messages: AIMessage[] = this.conversations.messages(conversationId);
 
     const aiRequest: AIRequest = {
       messages,
       systemPrompt: buildSystemPrompt(mode, request.task),
-      context: built.items,
+      context: contextToSend,
       mode,
       temperature: config.temperature,
       maxTokens: config.maxTokens,
       task: request.task,
       signal: request.signal,
     };
-
-    const access = this.resolveProvider(config.provider);
-    if (!access) {
-      throw new AIProviderError('not-configured', 'The selected provider is not available.');
-    }
-
-    if (config.allowExternalContext && access.provider.isExternal && built.items.length > 0) {
-      // The student agreed to share the selected context — nothing else is sent.
-    }
 
     let response: AIResponse;
     try {
@@ -125,10 +143,10 @@ export class AIService {
       response.sources.length > 0
         ? response.sources
         : built.documents.map((document) => ({
-            title: document.title,
-            origin: document.origin,
-            reference: document.reference,
-          }));
+          title: document.title,
+          origin: document.origin,
+          reference: document.reference,
+        }));
 
     const validation = this.validator.validate({ ...response, sources }, built.items);
 
@@ -145,8 +163,9 @@ export class AIService {
     return {
       response: { ...response, content: validation.content, sources },
       warnings: validation.warnings,
-      context: built.items,
+      context: contextToSend,
       conversationId,
+      contextWithheld,
     };
   }
 

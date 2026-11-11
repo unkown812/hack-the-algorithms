@@ -92,21 +92,21 @@ export function createDefaultAIConfiguration(): AIProviderConfig {
 /** The label of an explanation mode. */
 export function labelForMode(mode: ExplanationMode): string {
   switch (mode) {
-    case 'beginner':
-      return 'Beginner';
-    case 'detailed':
-      return 'Detailed';
-    case 'step-by-step':
-      return 'Step by step';
-    case 'exam':
-      return 'Exam preparation';
-    case 'practical':
-      return 'Practical';
-    case 'interview':
-      return 'Interview';
-    case 'visual':
-      return 'Visual learning';
-    default:
-      return mode;
+  case 'beginner':
+    return 'Beginner';
+  case 'detailed':
+    return 'Detailed';
+  case 'step-by-step':
+    return 'Step by step';
+  case 'exam':
+    return 'Exam preparation';
+  case 'practical':
+    return 'Practical';
+  case 'interview':
+    return 'Interview';
+  case 'visual':
+    return 'Visual learning';
+  default:
+    return mode;
   }
 }

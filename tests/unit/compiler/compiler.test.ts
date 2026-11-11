@@ -189,7 +189,7 @@ describe('compilation', () => {
 describe('diagnostics parsing', () => {
   it('parses errors with a line and a column', () => {
     const diagnostics = parseCompilerDiagnostics(
-      "program.c:12:7: error: expected ';' before 'return' token"
+      'program.c:12:7: error: expected \';\' before \'return\' token'
     );
 
     expect(diagnostics).toHaveLength(1);
@@ -201,7 +201,7 @@ describe('diagnostics parsing', () => {
 
   it('parses warnings and keeps the warning flag', () => {
     const diagnostics = parseCompilerDiagnostics(
-      "program.c:5:9: warning: unused variable 'x' [-Wunused-variable]"
+      'program.c:5:9: warning: unused variable \'x\' [-Wunused-variable]'
     );
 
     expect(diagnostics[0].severity).toBe('warning');
@@ -211,7 +211,7 @@ describe('diagnostics parsing', () => {
 
   it('parses linker errors', () => {
     const diagnostics = parseCompilerDiagnostics(
-      "C:\\tmp\\program.c: In function 'main':\nC:\\tmp\\program.c:4: undefined reference to `missingFunction'"
+      'C:\\tmp\\program.c: In function \'main\':\nC:\\tmp\\program.c:4: undefined reference to `missingFunction\''
     );
 
     expect(hasErrors(diagnostics)).toBe(true);

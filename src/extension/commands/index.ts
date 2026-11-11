@@ -1,5 +1,8 @@
 import * as vscode from 'vscode';
 import {
+  AI_EDITOR_COMMANDS,
+  AI_MESSAGES,
+  COMMAND_OPEN_AI_ASSISTANT,
   COMMAND_OPEN_DASHBOARD,
   COMMAND_OPEN_ALGORITHM_LIBRARY,
   COMMAND_OPEN_PRACTICE,
@@ -10,6 +13,7 @@ import {
 import { getAllAlgorithms, getAlgorithmById } from '../../core/algorithms';
 import { PlaygroundMessageHandler } from '../playground/message-handler';
 import { PracticeMessageHandler } from '../practice/message-handler';
+import { AIMessageHandler, getSelectedCode } from '../ai/message-handler';
 
 /** Message types that belong to the Phase 5 Code Playground. */
 const PLAYGROUND_MESSAGE_SET = new Set<string>([
@@ -61,6 +65,25 @@ const PRACTICE_MESSAGE_SET = new Set<string>([
   PRACTICE_MESSAGES.EXPORT_PROGRESS,
   PRACTICE_MESSAGES.IMPORT_PROGRESS,
   PRACTICE_MESSAGES.RECORD_ALGORITHM_EXPLORED,
+]);
+
+/** Message types that belong to the Phase 7 AI assistant. */
+const AI_MESSAGE_SET = new Set<string>([
+  AI_MESSAGES.GET_AI_STATUS,
+  AI_MESSAGES.SAVE_AI_CONFIG,
+  AI_MESSAGES.SET_API_KEY,
+  AI_MESSAGES.CLEAR_API_KEY,
+  AI_MESSAGES.TEST_PROVIDER,
+  AI_MESSAGES.ASK_ASSISTANT,
+  AI_MESSAGES.CANCEL_AI_REQUEST,
+  AI_MESSAGES.GET_CONVERSATIONS,
+  AI_MESSAGES.NEW_CONVERSATION,
+  AI_MESSAGES.OPEN_CONVERSATION,
+  AI_MESSAGES.DELETE_CONVERSATION,
+  AI_MESSAGES.CLEAR_CONVERSATIONS,
+  AI_MESSAGES.SET_CONVERSATION_MODE,
+  AI_MESSAGES.GENERATE_VIVA,
+  AI_MESSAGES.GENERATE_QUESTIONS,
 ]);
 
 let dashboardPanel: vscode.WebviewPanel | undefined = undefined;
@@ -140,6 +163,10 @@ function openDashboard(context: vscode.ExtensionContext, openView?: string): voi
     dashboardPanel?.webview.postMessage(message);
   });
 
+  const assistant = new AIMessageHandler(context, (message) => {
+    dashboardPanel?.webview.postMessage(message);
+  });
+
   dashboardPanel.webview.onDidReceiveMessage(
     (message) => {
       switch (message.type) {
@@ -180,6 +207,11 @@ function openDashboard(context: vscode.ExtensionContext, openView?: string): voi
         // Phase 6 messages are handled by the practice centre.
         if (PRACTICE_MESSAGE_SET.has(message.type)) {
           void practice.handle(message);
+          break;
+        }
+        // Phase 7 messages are handled by the AI assistant.
+        if (AI_MESSAGE_SET.has(message.type)) {
+          void assistant.handle(message);
         }
         break;
       }
@@ -231,9 +263,51 @@ export function registerCommands(context: vscode.ExtensionContext): void {
     () => openDashboard(context, 'practice')
   );
 
+  const openAIAssistantCommand = vscode.commands.registerCommand(
+    COMMAND_OPEN_AI_ASSISTANT,
+    () => openDashboard(context, 'ai-assistant')
+  );
+
+  /**
+   * The editor commands of the AI code explainer.
+   * They read the selection, open the assistant and hand the code to it —
+   * the source file itself is never uploaded automatically.
+   */
+  const editorActions: Record<
+    string,
+    { action: string; question?: string }
+  > = {
+    [AI_EDITOR_COMMANDS.EXPLAIN_SELECTION]: { action: 'explain' },
+    [AI_EDITOR_COMMANDS.EXPLAIN_FUNCTION]: { action: 'function' },
+    [AI_EDITOR_COMMANDS.GENERATE_PSEUDOCODE]: { action: 'pseudocode' },
+    [AI_EDITOR_COMMANDS.FIND_BUGS]: { action: 'bugs' },
+    [AI_EDITOR_COMMANDS.SUGGEST_IMPROVEMENTS]: { action: 'improve' },
+    [AI_EDITOR_COMMANDS.EXPLAIN_COMPLEXITY]: { action: 'complexity' },
+    [AI_EDITOR_COMMANDS.GENERATE_DOCUMENTATION]: { action: 'document' },
+  };
+
+  const editorCommands = Object.entries(editorActions).map(([commandId, spec]) =>
+    vscode.commands.registerCommand(commandId, () => {
+      const selection = getSelectedCode();
+      if (!selection) {
+        void vscode.window.showInformationMessage(
+          'Select the code you want the assistant to explain and run the command again.'
+        );
+        return;
+      }
+      openDashboard(context, 'ai-assistant');
+      void dashboardPanel?.webview.postMessage({
+        type: AI_MESSAGES.AI_EDITOR_REQUEST,
+        payload: { ...spec, ...selection },
+      });
+    })
+  );
+
   context.subscriptions.push(
     openDashboardCommand,
     openAlgorithmLibraryCommand,
-    openPracticeCommand
+    openPracticeCommand,
+    openAIAssistantCommand,
+    ...editorCommands
   );
 }

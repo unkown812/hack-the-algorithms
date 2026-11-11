@@ -6,6 +6,29 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-11
+
+### Added
+
+- **Phase 7 — AI Learning Assistant & Personalized DAA Tutor**
+  - Provider-independent AI service layer with three providers: an offline local knowledge base (default, no key needed), OpenAI and Gemini; new providers can be added without touching the assistant
+  - Conversational learning interface with conversation history, new/clear/delete conversations, suggested prompts, follow-up chips, copy response, stop generation, markdown rendering with code blocks and source references
+  - Seven explanation modes — beginner, detailed, step-by-step, exam preparation, practical, interview and visual learning — switchable mid-conversation
+  - Algorithm tutor grounded in the verified algorithm registry: theory, pseudocode, C implementation, complexity, applications, common mistakes and follow-up questions
+  - Code explainer with seven editor context-menu commands: Explain Selected Code, Explain This Function, Generate Pseudocode, Find Potential Bugs, Suggest Improvements, Explain Complexity, Generate Documentation
+  - Debugging assistant that explains the real compiler diagnostics and execution results of Phase 5 instead of inventing them
+  - Complexity tutor that interprets the Phase 4 results and keeps theoretical classes, instrumented counts and measured times apart
+  - Visualization assistant that explains the current Phase 2 trace step and translates natural playback requests into the existing visualization controls without ever modifying the trace
+  - Practical and viva assistant built on the Phase 3 practicals and the Phase 6 viva bank
+  - Practice question generator that surfaces verified question-bank questions and validates structure before display; generated content is never silently merged into the verified bank
+  - Personalized learning advisor with explainable recommendations and a prerequisite roadmap based on actual Phase 6 progress data
+  - Local keyword retrieval over the bundled verified corpus (registry, complexity topics, practicals, viva questions, question bank, templates), independent of the provider
+  - Response validator that flags fabricated compilation, execution or measurement claims before the answer is shown
+  - Secure credential storage in VS Code SecretStorage; API keys never reach the webview, settings, logs or workspace files
+  - Explicit consent gate: user-selected context (code, execution results, diagnostics, progress) is withheld from external providers unless allowed in the settings
+  - Connection test, configurable model, temperature, max tokens, timeout, context budgets; clear error messages for invalid keys, rate limits, network failures and timeouts
+  - New Activity Bar command and dashboard entry for the AI assistant; the extension stays fully usable without any AI configuration
+
 ## [0.4.0] - 2026-11-10
 
 ### Added

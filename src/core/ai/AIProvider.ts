@@ -71,29 +71,29 @@ export class ProviderRegistry {
 /** Builds the error message a student can act on. */
 export function describeProviderError(error: AIProviderError): string {
   switch (error.kind) {
-    case 'not-configured':
-      return 'No AI provider is configured. Add a provider in the settings — or keep using the local knowledge base, which needs no key at all.';
-    case 'invalid-key':
-      return 'The provider rejected the API key. Check the key in the settings and try again.';
-    case 'network':
-      return 'The provider could not be reached. Check your internet connection — the rest of the extension works offline.';
-    case 'rate-limit':
-      return `The provider is rate limiting the requests${
-        error.retryAfterSeconds ? ` — try again in ${error.retryAfterSeconds} seconds` : ''
-      }.`;
-    case 'timeout':
-      return 'The provider did not answer in time. Increase the timeout in the settings or try a shorter question.';
-    case 'cancelled':
-      return 'The request was cancelled.';
-    case 'unsupported-model':
-      return 'The selected model is not supported by the provider. Pick another model in the settings.';
-    case 'empty-response':
-      return 'The provider returned an empty answer. Try to rephrase the question.';
-    case 'malformed-response':
-      return 'The answer of the provider could not be read. Try again.';
-    case 'server':
-      return 'The provider reported an internal error. Try again in a moment.';
-    default:
-      return error.message;
+  case 'not-configured':
+    return 'No AI provider is configured. Add a provider in the settings — or keep using the local knowledge base, which needs no key at all.';
+  case 'invalid-key':
+    return 'The provider rejected the API key. Check the key in the settings and try again.';
+  case 'network':
+    return 'The provider could not be reached. Check your internet connection — the rest of the extension works offline.';
+  case 'rate-limit':
+    return `The provider is rate limiting the requests${
+      error.retryAfterSeconds ? ` — try again in ${error.retryAfterSeconds} seconds` : ''
+    }.`;
+  case 'timeout':
+    return 'The provider did not answer in time. Increase the timeout in the settings or try a shorter question.';
+  case 'cancelled':
+    return 'The request was cancelled.';
+  case 'unsupported-model':
+    return 'The selected model is not supported by the provider. Pick another model in the settings.';
+  case 'empty-response':
+    return 'The provider returned an empty answer. Try to rephrase the question.';
+  case 'malformed-response':
+    return 'The answer of the provider could not be read. Try again.';
+  case 'server':
+    return 'The provider reported an internal error. Try again in a moment.';
+  default:
+    return error.message;
   }
 }

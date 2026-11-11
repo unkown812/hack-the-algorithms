@@ -13,6 +13,7 @@ import { QuizPage } from './pages/QuizPage';
 import { CodingChallengesPage } from './pages/CodingChallengesPage';
 import { PracticalPreparationPage } from './pages/PracticalPreparationPage';
 import { LearningProgressPage } from './pages/LearningProgressPage';
+import { AIAssistant } from './pages/AIAssistant';
 import type { QuizConfig } from '../core/practice/types';
 import { postToExtension, onExtensionMessage } from './utils';
 import type { Algorithm } from '../core/algorithms';
@@ -30,7 +31,8 @@ type View =
   | 'quiz'
   | 'challenges'
   | 'practicals'
-  | 'progress';
+  | 'progress'
+  | 'ai-assistant';
 
 export const App: FunctionComponent = () => {
   const [algorithms, setAlgorithms] = useState<Algorithm[]>([]);
@@ -38,6 +40,9 @@ export const App: FunctionComponent = () => {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [quizConfig, setQuizConfig] = useState<QuizConfig | undefined>(undefined);
+  const [editorRequest, setEditorRequest] = useState<
+    { action: string; code: string; fileName: string } | undefined
+  >(undefined);
 
   useEffect(() => {
     postToExtension({ type: 'GET_ALGORITHMS' });
@@ -57,9 +62,25 @@ export const App: FunctionComponent = () => {
       }
       case 'OPEN_VIEW': {
         const payload = message.payload as { view?: string } | undefined;
-        if (payload?.view === 'practice') {
-          setView('practice');
+        if (payload?.view === 'practice' || payload?.view === 'ai-assistant') {
+          setView(payload.view);
         }
+        break;
+      }
+      case 'AI_EDITOR_REQUEST': {
+        // A command from the VS Code editor asked for an AI code action.
+        // The request is kept here so that it survives the page mount.
+        const request = (message.payload ?? {}) as {
+          action?: string;
+          code?: string;
+          fileName?: string;
+        };
+        setEditorRequest({
+          action: request.action ?? 'explain',
+          code: request.code ?? '',
+          fileName: request.fileName ?? '',
+        });
+        setView('ai-assistant');
         break;
       }
       default:
@@ -140,6 +161,10 @@ export const App: FunctionComponent = () => {
     setView('progress');
   };
 
+  const handleOpenAIAssistant = () => {
+    setView('ai-assistant');
+  };
+
   const handleBackToDetail = () => {
     setView('detail');
   };
@@ -174,6 +199,7 @@ export const App: FunctionComponent = () => {
           onOpenLibrary={handleOpenLibrary}
           onOpenPlayground={() => handleOpenPlayground()}
           onOpenPractice={handleOpenPractice}
+          onOpenAIAssistant={handleOpenAIAssistant}
         />
       )}
       {view === 'library' && (
@@ -245,6 +271,13 @@ export const App: FunctionComponent = () => {
       )}
       {view === 'progress' && (
         <LearningProgressPage onBack={handleOpenPractice} />
+      )}
+      {view === 'ai-assistant' && (
+        <AIAssistant
+          onBack={handleBackToDashboard}
+          editorRequest={editorRequest}
+          onEditorRequestHandled={() => setEditorRequest(undefined)}
+        />
       )}
     </Layout>
   );

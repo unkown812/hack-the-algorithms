@@ -59,6 +59,12 @@ graph TD
 - `src/core/achievements/` - Achievement catalogue and service
 - `src/core/bookmarks/` - Bookmark and revision list service
 - `src/core/storage/` - Learning data store and data migration
+- `src/core/ai/` - Phase 7 AI learning layer
+  - `types/` - AI message, request, response, context, provider configuration types
+  - `providers/` - LocalKnowledgeProvider (offline), OpenAIProvider, GeminiProvider
+  - `prompts/system/` - Tutor system prompt and mode/task instructions
+  - `features/` - AlgorithmTutor, CodeExplainer, DebuggingAssistant, ComplexityTutor, VisualizationAssistant, PracticalAssistant, QuestionGenerator, LearningAdvisor
+  - `AIProvider.ts`, `AIService.ts`, `AIContextBuilder.ts`, `AIRetrievalService.ts`, `AIResponseValidator.ts`, `AIConversationManager.ts`, `AIConfiguration.ts`
 - `src/core/visualization/` - Visualization engine and trace generators
   - `types/` - ExecutionStep, AlgorithmTrace, VisualizationState, VisualizationConfig
   - `engine/` - VisualizationEngine, ExecutionController, StepManager, PlaybackController
@@ -87,7 +93,8 @@ graph TD
 - `src/webview/components/challenges/` - Challenge explorer with the Phase 5 editor
 - `src/webview/components/practicals/` - Practical preparation, mock exams, viva practice
 - `src/webview/components/progress/` - Learning progress dashboard
-- `src/webview/hooks/` - useVisualization, usePlayback
+- `src/webview/components/ai/` - AI chat message renderer (markdown), conversation list, context panel, provider settings, mode selector, quick actions
+- `src/webview/hooks/` - useVisualization, usePlayback, usePractice, useAI
 - `src/webview/types/` - Webview message types
 - `src/webview/utils/` - postMessage communication wrapper
 
@@ -122,6 +129,15 @@ graph TD
 6. `ComplexityReportGenerator` builds a report; `ReportExporter` sends it to the extension host via `EXPORT_REPORT`, which shows a save dialog
 
 All Phase 4 computation runs in the renderer, so the extension host is never blocked.
+
+### Phase 7 (AI Learning Assistant)
+
+1. The webview asks for the AI status; the host answers with the provider list, the current configuration and the validation issues — never with a credential
+2. The student attaches context items explicitly (algorithm, code selection, visualization step, diagnostics, execution result, complexity results, progress) and sees them in the context panel before sending
+3. `ASK_ASSISTANT` reaches the `AIMessageHandler` in the host, which rebuilds the context through `AIContextBuilder` (budget + privacy filter) and calls `AIService`
+4. `AIService` resolves the provider through `AIProviderManager` — for an external provider the API key is read from the SecretStorage at this moment and never stored anywhere else
+5. The provider answers; `AIResponseValidator` checks for fabricated claims; the answer, its sources and any warnings go back to the webview
+6. With the default `local` provider the answer is produced offline by `LocalKnowledgeProvider` from the bundled verified corpus — no network access at all
 
 ## Data Classification (Phase 4)
 
@@ -174,6 +190,15 @@ The visualization engine does NOT execute arbitrary source code. Algorithm-speci
 |---------|-------|
 | `daa-companion.openDashboard` | DAA Companion: Open Dashboard |
 | `daa-companion.openAlgorithmLibrary` | DAA Companion: Algorithm Library |
+| `daa-companion.openPractice` | DAA Companion: Practice Centre |
+| `daa-companion.openAIAssistant` | DAA Companion: AI Learning Assistant |
+| `daa-companion.ai.explainSelection` | DAA AI: Explain Selected Code |
+| `daa-companion.ai.explainFunction` | DAA AI: Explain This Function |
+| `daa-companion.ai.generatePseudocode` | DAA AI: Generate Pseudocode |
+| `daa-companion.ai.findBugs` | DAA AI: Find Potential Bugs |
+| `daa-companion.ai.suggestImprovements` | DAA AI: Suggest Improvements |
+| `daa-companion.ai.explainComplexity` | DAA AI: Explain Complexity |
+| `daa-companion.ai.generateDocumentation` | DAA AI: Generate Documentation |
 
 ## Views
 

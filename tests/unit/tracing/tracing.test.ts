@@ -57,7 +57,7 @@ describe('source mapper', () => {
   });
 
   it('does not recognise statements inside comments', () => {
-    const source = `int main(void) {\n    // if (arr[j] > arr[j + 1]) { int temp = arr[j]; }\n    return 0;\n}\n`;
+    const source = 'int main(void) {\n    // if (arr[j] > arr[j + 1]) { int temp = arr[j]; }\n    return 0;\n}\n';
     const map = buildSourceMap(source, 'bubble-sort');
 
     expect(map.lines.get(2)).toBeUndefined();

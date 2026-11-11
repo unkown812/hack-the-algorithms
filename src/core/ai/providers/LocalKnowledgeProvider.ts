@@ -2,7 +2,6 @@ import { AIProviderError } from '../AIProvider';
 import type { AIProvider } from '../AIProvider';
 import { retrievalService } from '../AIRetrievalService';
 import type {
-  AIProviderConfig,
   AIProviderStatus,
   AIRequest,
   AIResponse,
@@ -42,8 +41,7 @@ export class LocalKnowledgeProvider implements AIProvider {
   }
 
   async send(
-    request: AIRequest,
-    config: AIProviderConfig
+    request: AIRequest
   ): Promise<AIResponse> {
     const startedAt = Date.now();
     const question = [...request.messages].reverse().find((message) => message.role === 'user');
