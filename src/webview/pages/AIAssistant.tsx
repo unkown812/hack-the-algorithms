@@ -39,6 +39,19 @@ interface AIAssistantProps {
 }
 
 /**
+ * The indication in the header: the student always sees whether the answer
+ * comes from an external service or stays on the machine.
+ */
+export function describeProviderUsage(status: AIProviderStatus | undefined): string {
+  if (!status) {
+    return 'No provider selected';
+  }
+  return status.isExternal
+    ? `External service — ${status.name}`
+    : `Offline — ${status.name}`;
+}
+
+/**
  * The AI learning assistant page.
  *
  * The chat lives here; every context item that is attached has been picked
@@ -272,6 +285,8 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
     (statuses.find((status) => status.id === config.provider)?.requiresKey === false ||
       statuses.find((status) => status.id === config.provider)?.hasKey === true);
 
+  const activeProvider = statuses.find((status) => status.id === config?.provider);
+
   return (
     <Box style={{ padding: SPACING.lg }}>
       <Flex justify="between" align="center" style={{ marginBottom: SPACING.lg }}>
@@ -283,9 +298,28 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
             <Text as="h1" style={{ ...TYPOGRAPHY.h2, color: COLORS.textPrimary, margin: 0, fontSize: '1.6rem' } as React.CSSProperties}>
               DAA Learning Assistant
             </Text>
-            <Text as="p" style={{ ...TYPOGRAPHY.small, color: COLORS.textMuted, margin: 0 } as React.CSSProperties}>
-              Your personal algorithms tutor — grounded in the verified material of the extension.
-            </Text>
+            <Flex align="center" gap={SPACING.sm} style={{ marginTop: '0.15rem' }}>
+              <Text as="span" style={{ ...TYPOGRAPHY.small, color: COLORS.textMuted } as React.CSSProperties}>
+                Your personal algorithms tutor — grounded in the verified material of the extension.
+              </Text>
+              {activeProvider && (
+                <Text
+                  as="span"
+                  style={{
+                    ...TYPOGRAPHY.small,
+                    fontSize: '0.7rem',
+                    color: activeProvider.isExternal ? COLORS.warning : COLORS.success,
+                    backgroundColor: activeProvider.isExternal
+                      ? 'rgba(245, 158, 11, 0.12)'
+                      : 'rgba(34, 197, 94, 0.12)',
+                    borderRadius: RADIUS.sm,
+                    padding: '0.1rem 0.4rem',
+                  } as React.CSSProperties}
+                >
+                  {describeProviderUsage(activeProvider)}
+                </Text>
+              )}
+            </Flex>
           </Box>
         </Flex>
         <Button variant="secondary" size="sm" onClick={() => setShowSettings((value) => !value)}>

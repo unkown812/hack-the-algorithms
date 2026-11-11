@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { AIAssistant } from '../../../src/webview/pages/AIAssistant';
+import { AIAssistant, describeProviderUsage } from '../../../src/webview/pages/AIAssistant';
 import { AIMarkdown, parseMarkdown } from '../../../src/webview/components/ai/AIMarkdown';
 import {
   AIMessageView,
@@ -69,6 +69,12 @@ describe('AI assistant page renders', () => {
   it('shows that the local knowledge base works without a key', () => {
     const markup = render(<AIAssistant onBack={() => undefined} />);
     expect(markup).toContain('local knowledge base answers from the bundled material');
+  });
+
+  it('indicates that the assistant runs offline by default', () => {
+    expect(describeProviderUsage(STATUSES[0])).toBe('Offline — Local knowledge base');
+    expect(describeProviderUsage(STATUSES[1])).toBe('External service — OpenAI');
+    expect(describeProviderUsage(undefined)).toBe('No provider selected');
   });
 
   it('renders every explanation mode', () => {
