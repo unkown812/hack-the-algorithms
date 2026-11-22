@@ -2,7 +2,7 @@
   "name": "hack-the-algorithms",
   "displayName": "Hack The Algorithms",
   "description": "An interactive algorithm learning and visualization companion for Visual Studio Code.",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "author": "ukown812",
   "publisher": "ukown812",
   "repository": {

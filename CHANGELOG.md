@@ -4,11 +4,12 @@ All notable changes to the "hack-the-algorithms" extension will be documented in
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [Unreleased]
+## [0.6.4] - 2026-11-22
 
 ### Added
 
 - **Phase 8 — unified navigation** — top `AppHeader` navigation for the main modules (Dashboard, Library, Playground, Practice, AI Assistant, Progress) with unit tests
+- **Phase 8 — CI/CD workflows** — `test.yml` runs the full local validation pipeline plus VSIX packaging validation; `release.yml` validates and publishes approved releases through the Marketplace.
 
 ### Fixed
 
@@ -16,9 +17,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Changed
 
-- **Phase 8 — performance** — step timeline renders a windowed slice of the trace (30 steps) for large executions, with a range caption; timer cleanups verified
-
-- **Phase 8 — CI/CD workflows** — `test.yml` runs the full local validation pipeline plus VSIX packaging validation; `release.yml` validates and publishes approved releases through the Marketplace.
+- **Phase 8 — performance** — step timeline renders a windowed slice of the trace (30 steps) for large executions, with a range caption; timer cleanups verified.
 
 ## [0.6.3] - 2026-11-22
 
