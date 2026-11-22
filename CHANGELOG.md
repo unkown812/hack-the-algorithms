@@ -6,6 +6,59 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+### Added
+
+- **Phase 8 — unified navigation** — top `AppHeader` navigation for the main modules (Dashboard, Library, Playground, Practice, AI Assistant, Progress) with unit tests
+
+### Fixed
+
+- **Phase 8 — accessibility** — navigation landmark (`role="navigation"`) and `aria-current` on the active entry; explicit `aria-label` on the conversation-delete button
+
+### Changed
+
+- **Phase 8 — performance** — step timeline renders a windowed slice of the trace (30 steps) for large executions, with a range caption; timer cleanups verified
+
+- **Phase 8 — CI/CD workflows** — `test.yml` runs the full local validation pipeline plus VSIX packaging validation; `release.yml` validates and publishes approved releases through the Marketplace.
+
+## [0.6.3] - 2026-11-22
+
+### Added
+
+- **Phase 8 — onboarding experience** — first-run onboarding page with the seven module steps of the learning loop, deep-linkable through a new `DAA Companion: Onboarding` command and a dashboard quick action
+
+## [0.6.2] - 2026-11-22
+
+### Fixed
+
+- **Phase 8 — release readiness (P0)**
+  - Webview deep links (Activity Bar practice/AI/library entries and the editor AI commands) are now queued until the webview signals readiness (`DAA_WEBVIEW_READY`) instead of racing the panel startup
+  - The `DAA Companion: Algorithm Library` command now opens the library view instead of the dashboard
+  - The dashboard theme now follows the VS Code light/dark theme through the `--vscode-*` tokens, with a webview style reset and `color-scheme`
+  - The AI/code-explainer editor actions post their `AI_EDITOR_REQUEST` only after the assistant view is ready
+  - The webview content security policy now uses a per-load random nonce and allows the local resource roots
+
+### Changed
+
+- The activity category cards of the dashboard navigate to the matching algorithm category instead of being inert
+
+## [0.6.1] - 2026-11-22
+
+### Added
+
+- **Phase 7.2 — completion pass for the AI learning assistant**
+  - The AI Learning Assistant is reachable directly from the Activity Bar, next to the Practice Centre
+  - Practice tools panel: generate practice questions (topic, difficulty, type, count) and review them before approval, generate viva questions, start a mock practical exam
+  - Personalised learning plan with explainable recommendations and a prerequisite roadmap, computed locally from the Phase 6 progress data
+  - Regenerate action for the newest answer, alongside copy and stop generation
+  - Task-specific follow-up questions under an answer (algorithm, code, complexity, visualization, practical, question generation, learning advice)
+  - Inline assistant in the visualizer: explains the current trace step with the step attached as context, and executes playback commands ("next", "previous", "restart", "play", "pause") through the existing controls
+  - Context truncation is reported when the attached context exceeds the configured budget
+  - Conversation-message, context-character and bundled-resource settings exposed in the assistant settings
+
+### Changed
+
+- The GDB adapter test now uses the platform debugger and compiler instead of a hard-coded Windows path, so the suite runs on Linux and macOS as well
+
 ## [0.6.0] - 2026-11-11
 
 ### Added

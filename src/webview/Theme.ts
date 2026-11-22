@@ -1,5 +1,6 @@
 export {
   COLORS,
+  STATUS_COLORS,
   SPACING,
   RADIUS,
   TYPOGRAPHY,

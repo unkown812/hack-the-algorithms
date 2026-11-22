@@ -12,8 +12,10 @@ import { AIProviderManager } from '../services/AIProviderManager';
 import { AISecretStorage } from '../services/AISecretStorage';
 import type { LearningData } from '../../core/practice/types';
 import { PracticalAssistant } from '../../core/ai/features/PracticalAssistant';
+import { LearningAdvisor } from '../../core/ai/features/LearningAdvisor';
 import { QuestionDraftService } from '../../core/ai/QuestionDraftService';
 import { ApprovedQuestionService } from '../services/ApprovedQuestionService';
+import { normalizeLearningData } from '../../core/storage/LearningDataStore';
 import type { AIQuestionRequest } from '../../core/ai/types';
 
 /**
@@ -195,6 +197,11 @@ export class AIMessageHandler {
         break;
       }
 
+      case AI_MESSAGES.GET_LEARNING_ADVICE: {
+        this.postLearningAdvice();
+        break;
+      }
+
       case AI_MESSAGES.GET_QUESTION_DRAFTS: {
         this.postDrafts();
         break;
@@ -267,6 +274,7 @@ export class AIMessageHandler {
         mode: payload.mode as ExplanationMode | undefined,
         task: payload.task as string | undefined,
         conversationId: payload.conversationId as string | undefined,
+        regenerate: payload.regenerate === true,
         selection,
         signal: controller.signal,
         // The answer is delivered piece by piece when the provider supports it.
@@ -286,9 +294,13 @@ export class AIMessageHandler {
           response: result.response,
           warnings: result.warnings,
           contextWithheld: result.contextWithheld,
+          contextTruncated: result.contextTruncated,
           suggestions:
             (payload.suggestions as Array<{ id: string; text: string; task?: string }>) ??
-            this.service.getSuggestions(),
+            this.service.getSuggestions({
+              task: payload.task as string | undefined,
+              algorithmId: selection.algorithmId,
+            }),
         },
       });
     } catch (error) {
@@ -391,6 +403,35 @@ export class AIMessageHandler {
     this.post({
       type: AI_MESSAGES.AI_QUESTION_DRAFTS,
       payload: { drafts: this.drafts.list(), ...extra },
+    });
+  }
+
+  /**
+   * Builds the personalised learning plan.
+   *
+   * The recommendations are computed locally from the Phase 6 progress data —
+   * the assistant only explains them later if the student asks. No provider
+   * is contacted for this message.
+   */
+  private postLearningAdvice(): void {
+    const data = normalizeLearningData(this.learningDataStore.read());
+    const advisor = new LearningAdvisor();
+
+    this.post({
+      type: AI_MESSAGES.AI_LEARNING_ADVICE,
+      payload: {
+        summary: advisor.summarizeProgress(data),
+        recommendations: advisor.generateRecommendations(data),
+        roadmap: advisor.buildRoadmap(data).slice(0, 12),
+        statistics: {
+          explored: data.exploredAlgorithms.length,
+          answered: data.statistics.questionsAnswered,
+          correct: data.statistics.questionsCorrect,
+          practicalsCompleted: data.practicalSessions.filter(
+            (session) => session.status === 'completed'
+          ).length,
+        },
+      },
     });
   }
 

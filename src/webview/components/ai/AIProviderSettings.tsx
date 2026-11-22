@@ -193,6 +193,22 @@ export const AIProviderSettings: FunctionComponent<{
           max={300}
           onChange={(value) => onSaveConfig({ timeoutMs: value * 1000 })}
         />
+        <NumberField
+          label="Conversation messages"
+          value={config.maxContextMessages}
+          step={1}
+          min={1}
+          max={50}
+          onChange={(value) => onSaveConfig({ maxContextMessages: value })}
+        />
+        <NumberField
+          label="Context characters"
+          value={config.maxContextCharacters}
+          step={1000}
+          min={500}
+          max={100000}
+          onChange={(value) => onSaveConfig({ maxContextCharacters: value })}
+        />
       </Flex>
 
       <label style={{ ...TYPOGRAPHY.small, color: COLORS.textMuted, display: 'flex', gap: '0.5rem', alignItems: 'center', margin: `${SPACING.md} 0 0.25rem 0`, cursor: 'pointer' }}>
@@ -202,6 +218,15 @@ export const AIProviderSettings: FunctionComponent<{
           onChange={(event) => onSaveConfig({ streaming: event.target.checked })}
         />
         Deliver the answer piece by piece when the provider supports streaming
+      </label>
+
+      <label style={{ ...TYPOGRAPHY.small, color: COLORS.textMuted, display: 'flex', gap: '0.5rem', alignItems: 'center', margin: `${SPACING.xs} 0 0.25rem 0`, cursor: 'pointer' }}>
+        <input
+          type="checkbox"
+          checked={config.useLocalResources}
+          onChange={(event) => onSaveConfig({ useLocalResources: event.target.checked })}
+        />
+        Include the bundled verified learning resources in the answer
       </label>
 
       {config.provider === 'local-llm' && (

@@ -1,6 +1,6 @@
 import type { FunctionComponent } from 'react';
 import { Box, Flex, Text } from './primitives';
-import { COLORS, SPACING, RADIUS } from './Theme';
+import { COLORS, SPACING, RADIUS, STATUS_COLORS } from './Theme';
 
 type Props = {
   id: string;
@@ -49,7 +49,7 @@ export const CategoryCard: FunctionComponent<Props> = ({
         </Box>
         <Box
           style={{
-            backgroundColor: COLORS.accent + '15',
+            backgroundColor: STATUS_COLORS.accent + '15',
             color: COLORS.accent,
             padding: '0.5rem 0.875rem',
             borderRadius: RADIUS.md,

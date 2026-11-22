@@ -1,17 +1,37 @@
+/**
+ * The design tokens of the webview.
+ *
+ * The surfaces are expressed with the CSS custom properties of the VS Code
+ * theme so that the assistant follows the light and the dark theme of the
+ * user. The fallbacks keep the previous dark palette when no variable is
+ * available.
+ */
 export const COLORS = {
-  background: '#0f172a',
-  surface: '#1e293b',
-  surfaceElevated: '#334155',
-  border: '#334155',
-  textPrimary: '#f8fafc',
-  textSecondary: '#94a3b8',
-  textMuted: '#64748b',
-  accent: '#3b82f6',
-  accentHover: '#2563eb',
+  background: 'var(--vscode-editor-background, #0f172a)',
+  surface: 'var(--vscode-editorWidget-background, #1e293b)',
+  surfaceElevated: 'var(--vscode-editorWidget-background, #334155)',
+  border: 'var(--vscode-editorWidget-border, #334155)',
+  textPrimary: 'var(--vscode-editor-foreground, #f8fafc)',
+  textSecondary: 'var(--vscode-editor-foreground, #94a3b8)',
+  textMuted: 'var(--vscode-descriptionForeground, #64748b)',
+  accent: 'var(--vscode-focusBorder, #3b82f6)',
+  accentHover: 'var(--vscode-buttonHoverBackground, #2563eb)',
   success: '#22c55e',
   warning: '#f59e0b',
   error: '#ef4444',
   overlay: 'rgba(15, 23, 42, 0.9)',
+} as const;
+
+/**
+ * The accent and status colours as plain hex values. Alpha compositing
+ * (`colour + '40'`) needs a concrete hex value, the CSS variables cannot be
+ * concatenated with an alpha suffix.
+ */
+export const STATUS_COLORS = {
+  accent: '#3b82f6',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#ef4444',
 } as const;
 
 export const SPACING = {

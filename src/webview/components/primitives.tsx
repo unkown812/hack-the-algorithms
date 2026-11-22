@@ -97,6 +97,7 @@ type ButtonProps = BoxProps & {
   size?: 'sm' | 'md' | 'lg';
   onClick?: () => void;
   disabled?: boolean;
+  type?: 'button' | 'submit' | 'reset';
 };
 
 export const Button: FunctionComponent<ButtonProps> = ({

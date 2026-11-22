@@ -1,7 +1,7 @@
 import type { FunctionComponent } from 'react';
 import { useMemo, useState } from 'react';
 import { Box, Flex, Text, Button } from '../components/primitives';
-import { COLORS, SPACING, RADIUS, TYPOGRAPHY } from '../Theme';
+import { COLORS, SPACING, RADIUS, TYPOGRAPHY, STATUS_COLORS } from '../Theme';
 import type { Algorithm } from '../../core/algorithms';
 import { getAlgorithmsByCategory, getAlgorithmById } from '../../core/algorithms/registry';
 import { InputSizeTester } from '../../core/complexity/input/InputSizeTester';
@@ -253,7 +253,7 @@ export const AlgorithmComparisonPage: FunctionComponent<AlgorithmComparisonProps
           role="alert"
           style={{
             marginBottom: SPACING.md,
-            backgroundColor: COLORS.error + '22',
+            backgroundColor: STATUS_COLORS.error + '22',
             border: `1px solid ${COLORS.error}`,
             borderRadius: RADIUS.md,
             padding: SPACING.md,
@@ -271,7 +271,7 @@ export const AlgorithmComparisonPage: FunctionComponent<AlgorithmComparisonProps
             <Box
               role="alert"
               style={{
-                backgroundColor: COLORS.error + '22',
+                backgroundColor: STATUS_COLORS.error + '22',
                 border: `1px solid ${COLORS.error}`,
                 borderRadius: RADIUS.md,
                 padding: SPACING.md,

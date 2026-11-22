@@ -118,13 +118,14 @@ See [`docs/PHASE6.md`](docs/PHASE6.md) for the question catalogue, the scoring r
 - **Code explainer** — seven editor context-menu commands that explain, annotate, criticise or document the selected code
 - **Debugging assistant** — explains the real compiler diagnostics and execution results of the playground instead of inventing them
 - **Complexity tutor** — interprets the Phase 4 analyzer results and keeps theoretical classes, instrumented counts and measured times apart
-- **Visualization assistant** — explains the current trace step and turns requests like "move to the next comparison" into the existing playback controls
-- **Practical & viva assistant** — practical papers, viva practice and mock exam guidance from the Phase 3/6 resources
-- **Question generator** — surfaces verified question-bank questions and validates their structure; nothing unverified is merged into the official bank
-- **Learning advisor** — explainable recommendations and a prerequisite roadmap based on your actual progress data
+- **Visualization assistant** — an inline assistant next to the visualizer explains the current trace step and turns requests like "move to the next comparison" into the existing playback controls, without contacting a provider
+- **Practical & viva assistant** — practical papers, viva practice and mock exam guidance from the Phase 3/6 resources, exposed through the assistant's Practice tools panel
+- **Question generator** — surfaces verified question-bank questions and validates their structure; nothing unverified is merged into the official bank, and generated drafts must be approved in the review panel
+- **Learning advisor** — explainable recommendations and a prerequisite roadmap based on your actual progress data, computed locally and shown in the assistant
+- **Conversation controls** — copy, regenerate, stop generation, new/clear conversations and task-specific follow-up questions
 - **Privacy by design** — context is attached explicitly, shown before sending, removable per item, and withheld from external providers without consent
 
-See [`docs/PHASE7.md`](docs/PHASE7.md) for the architecture, the privacy rules and the limitations.
+See [`docs/PHASE7.md`](docs/PHASE7.md) for the architecture, the privacy rules and the limitations, [`docs/PHASE7_REPORT.md`](docs/PHASE7_REPORT.md) for the final implementation report, and [`docs/PHASE_8_AUDIT_REPORT.md`](docs/PHASE_8_AUDIT_REPORT.md) for the Phase 8 audit and remediation status.
 
 ### Phase 7.1 Features (Complete)
 
@@ -133,6 +134,12 @@ See [`docs/PHASE7.md`](docs/PHASE7.md) for the architecture, the privacy rules a
 - **Local model provider** — talk to a model server on your own machine (Ollama compatible): no API key, and the request never leaves the computer
 - **Automatic context** — the algorithm, the current visualization step, your playground program, the compiler diagnostics, the last run and the complexity analysis are offered as attachable context
 - **Review workflow for generated questions** — generated questions are validated and shown for approval; only an approved question is used in a quiz, and the verified question bank stays untouched
+
+### Phase 8 Status
+
+- **Release readiness remediation** — webview deep links, library navigation, shared theme, security hardening and dead-control fixes
+- **Onboarding** — guided seven-module learning path with unit tests
+- **Audit report** — `docs/PHASE_8_AUDIT_REPORT.md` tracks findings, classifications and the remaining Phase 8 backlog
 
 ---
 

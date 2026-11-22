@@ -12,7 +12,9 @@ import { AIMarkdown } from './AIMarkdown';
 export const AIMessageView: FunctionComponent<{
   message: AIMessageModel;
   onSuggest?: (text: string) => void;
-}> = ({ message }) => {
+  /** Regenerates this answer — only offered for the newest answer. */
+  onRegenerate?: () => void;
+}> = ({ message, onRegenerate }) => {
   const isUser = message.role === 'user';
 
   return (
@@ -122,6 +124,11 @@ export const AIMessageView: FunctionComponent<{
             >
               Copy
             </Button>
+            {onRegenerate && (
+              <Button variant="ghost" size="sm" onClick={onRegenerate}>
+                Regenerate
+              </Button>
+            )}
           </Flex>
         )}
       </Box>
@@ -219,6 +226,7 @@ export const AIConversationList: FunctionComponent<{
           <button
             type="button"
             title="Delete conversation"
+            aria-label="Delete conversation"
             onClick={(event) => {
               event.stopPropagation();
               onDelete(conversation.id);

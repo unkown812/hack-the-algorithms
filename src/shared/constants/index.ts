@@ -6,6 +6,7 @@ export const COMMAND_OPEN_DASHBOARD = 'daa-companion.openDashboard';
 export const COMMAND_OPEN_ALGORITHM_LIBRARY = 'daa-companion.openAlgorithmLibrary';
 export const COMMAND_OPEN_PRACTICE = 'daa-companion.openPractice';
 export const COMMAND_OPEN_AI_ASSISTANT = 'daa-companion.openAIAssistant';
+export const COMMAND_OPEN_ONBOARDING = 'daa-companion.openOnboarding';
 
 /** Phase 7 — editor commands of the AI code explainer. */
 export const AI_EDITOR_COMMANDS = {
@@ -207,6 +208,7 @@ export const AI_MESSAGES = {
   SET_CONVERSATION_MODE: 'SET_CONVERSATION_MODE',
   GENERATE_VIVA: 'GENERATE_VIVA',
   GENERATE_QUESTIONS: 'GENERATE_QUESTIONS',
+  GET_LEARNING_ADVICE: 'GET_LEARNING_ADVICE',
   GET_QUESTION_DRAFTS: 'GET_QUESTION_DRAFTS',
   REVIEW_QUESTION_DRAFT: 'REVIEW_QUESTION_DRAFT',
   DELETE_QUESTION_DRAFT: 'DELETE_QUESTION_DRAFT',
@@ -225,4 +227,5 @@ export const AI_MESSAGES = {
   AI_CONVERSATION_LOADED: 'AI_CONVERSATION_LOADED',
   AI_EDITOR_REQUEST: 'AI_EDITOR_REQUEST',
   AI_QUESTION_DRAFTS: 'AI_QUESTION_DRAFTS',
+  AI_LEARNING_ADVICE: 'AI_LEARNING_ADVICE',
 } as const;

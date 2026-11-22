@@ -5,6 +5,14 @@ import type { ContextSelection } from './AIContextBuilder';
 import { AIResponseValidator } from './AIResponseValidator';
 import { AIConversationManager } from './AIConversationManager';
 import { buildSystemPrompt } from './prompts/system/tutor.prompt';
+import { AlgorithmTutor } from './features/AlgorithmTutor';
+import { CodeExplainer } from './features/CodeExplainer';
+import { DebuggingAssistant } from './features/DebuggingAssistant';
+import { ComplexityTutor } from './features/ComplexityTutor';
+import { VisualizationAssistant } from './features/VisualizationAssistant';
+import { PracticalAssistant } from './features/PracticalAssistant';
+import { QuestionGenerator } from './features/QuestionGenerator';
+import { LearningAdvisor } from './features/LearningAdvisor';
 import {
   parseGeneratedQuestions,
   QUESTION_GENERATION_INSTRUCTION,
@@ -49,6 +57,11 @@ export interface AskRequest {
   conversationId?: string;
   /** The task that shapes the prompt, e.g. "algorithm-explanation". */
   task?: string;
+  /**
+   * Replaces the newest answer of the conversation instead of adding another
+   * turn. The student's question is kept once in the history.
+   */
+  regenerate?: boolean;
   signal?: AbortSignal;
   /**
    * Called for every piece of the answer while it is generated.
@@ -68,6 +81,8 @@ export interface AskResult {
   conversationId: string;
   /** True when context was removed because the consent was missing. */
   contextWithheld: boolean;
+  /** True when the context was shortened to fit the configured budget. */
+  contextTruncated: boolean;
   /** True when the answer was delivered piece by piece. */
   streamed: boolean;
 }
@@ -88,16 +103,22 @@ export class AIService {
     const mode = request.mode ?? 'beginner';
 
     // A stale id (for example after a host restart) must not lose the answer.
-    const conversationId =
+    const existingConversation =
       request.conversationId && this.conversations.get(request.conversationId)
         ? request.conversationId
-        : this.conversations.create(mode).id;
+        : undefined;
+    const conversationId = existingConversation ?? this.conversations.create(mode).id;
 
-    const userMessage = this.conversations.addMessage(conversationId, {
-      role: 'user',
-      content: request.question,
-      mode,
-    });
+    if (request.regenerate && existingConversation) {
+      // The old answer is replaced; the question stays in the history once.
+      this.conversations.removeLastAssistant(conversationId);
+    } else {
+      this.conversations.addMessage(conversationId, {
+        role: 'user',
+        content: request.question,
+        mode,
+      });
+    }
 
     const built = this.contextBuilder.build(request.selection ?? {}, request.question, config);
 
@@ -194,14 +215,14 @@ export class AIService {
       fromKnowledgeBase: response.fromKnowledgeBase,
     });
 
-    void userMessage;
-
     return {
       response: { ...response, content: validation.content, sources },
       warnings: validation.warnings,
       context: contextToSend,
       conversationId,
       contextWithheld,
+      // A withheld context is not "shortened" — the consent notice explains it.
+      contextTruncated: built.truncated && !contextWithheld,
       streamed,
     };
   }
@@ -279,8 +300,60 @@ export class AIService {
     };
   }
 
-  /** The suggested questions shown in the empty chat. */
-  getSuggestions(context?: { algorithmId?: string }): Array<{ id: string; text: string; task?: string }> {
+  /**
+   * The suggested questions shown in the empty chat and under an answer.
+   *
+   * When the request had a task, the follow-up questions of the matching
+   * feature are returned — a code explanation offers a dry run, a complexity
+   * explanation offers the recurrence, and so on. Otherwise the general
+   * entry points are shown.
+   */
+  getSuggestions(context?: {
+    algorithmId?: string;
+    task?: string;
+  }): Array<{ id: string; text: string; task?: string }> {
+    const task = context?.task;
+
+    switch (task) {
+    case 'algorithm-explanation':
+      return new AlgorithmTutor()
+        .getFollowUps(context?.algorithmId ?? 'bubble-sort')
+        .map((suggestion) => ({ ...suggestion, task }));
+    case 'code-explanation':
+      return new CodeExplainer()
+        .getSuggestions()
+        .map((suggestion) => ({ ...suggestion, task }));
+    case 'debugging':
+      return new DebuggingAssistant()
+        .getSuggestions()
+        .map((suggestion) => ({ ...suggestion, task }));
+    case 'complexity':
+      return new ComplexityTutor()
+        .getSuggestions()
+        .map((suggestion) => ({ ...suggestion, task }));
+    case 'visualization':
+      return new VisualizationAssistant()
+        .getSuggestions()
+        .map((suggestion) => ({ ...suggestion, task }));
+    case 'practical':
+    case 'viva':
+    case 'mock-exam':
+    case 'mock-exam-suggest':
+      return new PracticalAssistant()
+        .getSuggestions(task)
+        .map((suggestion) => ({ ...suggestion, task }));
+    case 'question-generation':
+      return new QuestionGenerator()
+        .getSuggestions()
+        .map((suggestion) => ({ ...suggestion, task }));
+    case 'learning-advice':
+      return new LearningAdvisor()
+        .getSuggestions()
+        .map((suggestion) => ({ ...suggestion, task }));
+    default:
+      break;
+    }
+
     const suggestions: Array<{ id: string; text: string; task?: string }> = [
       { id: 'explain-algorithm', text: 'Explain an algorithm.', task: 'algorithm-explanation' },
       { id: 'complexity', text: 'Understand time complexity.', task: 'complexity' },

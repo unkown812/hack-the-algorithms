@@ -1,7 +1,7 @@
 import type { FunctionComponent } from 'react';
 import type { Algorithm } from '../../core/algorithms';
 import { Box, Flex, Text } from './primitives';
-import { COLORS, SPACING, RADIUS } from './Theme';
+import { COLORS, SPACING, RADIUS, STATUS_COLORS } from './Theme';
 
 type Props = {
   algorithm: Algorithm;
@@ -13,9 +13,9 @@ export const AlgorithmCard: FunctionComponent<Props> = ({
   onSelect,
 }) => {
   const difficultyColors: Record<string, string> = {
-    Beginner: COLORS.success,
-    Intermediate: COLORS.warning,
-    Advanced: COLORS.error,
+    Beginner: STATUS_COLORS.success,
+    Intermediate: STATUS_COLORS.warning,
+    Advanced: STATUS_COLORS.error,
   };
   const diffColor = difficultyColors[algorithm.difficulty] || COLORS.textMuted;
 

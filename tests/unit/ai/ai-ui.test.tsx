@@ -120,9 +120,12 @@ describe('AI markdown renderer', () => {
     expect(kinds).toContain('table');
   });
 
-  it('renders code blocks with a copy button', () => {
+  it('renders code blocks with a copy button and C highlighting', () => {
     const markup = render(<AIMarkdown content={'```c\nint x = 1;\n```'} />);
-    expect(markup).toContain('int x = 1;');
+    // The C tokenizer splits the line into coloured spans.
+    expect(markup).toContain('color:#82aaff');
+    expect(markup).toContain('int</span>');
+    expect(markup).toContain('color:#f78c6c');
     expect(markup).toContain('Copy');
   });
 

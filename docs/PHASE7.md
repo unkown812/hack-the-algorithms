@@ -312,3 +312,39 @@ of all three providers, the local server errors), `tests/unit/ai/review-and-retr
 ranking) and `tests/unit/ai/context-registry.test.ts` (the registry, the
 factual description of a trace step, the reviewed questions in the practice
 centre).
+
+---
+
+# Phase 7.2 — Completion Pass
+
+This pass closes the remaining user-facing gaps without changing the
+architecture of Phase 7/7.1.
+
+## What changed
+
+| Area | Change |
+|---|---|
+| Activity Bar | The AI Learning Assistant is now the first entry of the DAA Companion view, next to the Practice Centre. |
+| Practice tools | A panel in the assistant exposes the question generator (topic, difficulty, type, count), viva preparation, mock-exam entry points and the personalised learning plan. |
+| Learning plan | `GET_LEARNING_ADVICE` computes recommendations and the prerequisite roadmap **locally** from the Phase 6 learning data and returns them to the webview. No provider is contacted. |
+| Answer actions | Every newest answer can be regenerated; the student's question is not duplicated. Copy and stop-generation were already present. |
+| Follow-up questions | `AIService.getSuggestions({ task })` delegates to the matching feature (`AlgorithmTutor`, `CodeExplainer`, `ComplexityTutor`, …), so the chips under an answer fit the task. |
+| Visualization | `AIVisualizationAssistant` sits next to the visualizer. Playback commands ("next", "previous", "restart", "play", "pause") call the existing controls; questions are sent with the current trace step as context. |
+| Context transparency | When the attached context exceeds `maxContextCharacters`, the answer carries an explicit truncation notice. `maxContextMessages`, `maxContextCharacters` and `useLocalResources` are editable in the settings. |
+| Tests | Portable GDB test (no hard-coded Windows path); new tests for the practice-tool components, the visualization assistant, regenerate action, task suggestions and truncation reporting. |
+
+## Message protocol additions
+
+- Webview → host: `GET_LEARNING_ADVICE`.
+- Host → webview: `AI_LEARNING_ADVICE` with `summary`, `recommendations`,
+  `roadmap` and `statistics`.
+- `AI_RESPONSE` now includes `contextTruncated`.
+
+## Privacy and determinism
+
+- The learning plan is computed in the extension host from the stored learning
+  data; it never leaves the machine to be built.
+- Playback commands are parsed locally by `VisualizationAssistant.parseCommand`
+  and executed by the visualizer's own controls. The AI never mutates a trace.
+- Generated questions still require explicit approval before they can be used
+  in a quiz.
