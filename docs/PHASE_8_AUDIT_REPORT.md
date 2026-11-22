@@ -121,7 +121,7 @@ Future work:
 npm run check-types   # pass
 npm run lint          # 0 errors
 npm run compile       # build complete
-npx vitest run        # 37 files, 553 tests passed
+npx vitest run        # 38 files, 557 tests passed
 ```
 
 ## 9. Conclusion
@@ -130,3 +130,33 @@ The Phase 8 audit identified a small set of critical integration, security, them
 navigation defects that were remediated (P0), followed by the first P1 deliverable (onboarding,
 v0.6.3). The extension is functionally complete across Phases 1–7 and is moving toward the
 Phase 8 production release gate.
+
+## 10. Final acceptance criteria status
+
+Release gate status: **OPEN** (final sign-off pending — VSIX clean-install activation and CI run).
+
+| # | Acceptance criterion | Status |
+|---|---|---|
+| 1 | All seven previous phases have been audited | ✅ Done (this audit) |
+| 2 | Documented and implemented features are reconciled | ⬜ Partial (audit vs docs drift possible) |
+| 3 | Core modules communicate correctly | ⬜ Partial (deep links fixed; workflow E2E pending) |
+| 4 | No critical broken workflows remain | ⬜ Partial (P0 deep-link/library/theme/CSP fixed) |
+| 5 | Supported algorithms pass correctness tests | ✅ Done |
+| 6 | Visualization traces are deterministic and accurate | ✅ Done |
+| 7 | Complexity calculations are validated | ✅ Done |
+| 8 | C compilation and execution work on supported platforms | ⬜ Partial (tests exist; real-toolchain matrix pending) |
+| 9 | Execution safety limitations are documented | ✅ Done |
+| 10 | Practice and assessment scoring is correct | ✅ Done |
+| 11 | AI integration respects privacy and credential security | ✅ Done |
+| 12 | Local persistence and migrations work | ✅ Done |
+| 13 | Light and dark themes work correctly | ✅ Done (P0) |
+| 14 | Responsive webview layouts are usable | ⬜ Partial (design-system audit pending) |
+| 15 | All interactive controls have working behavior | ⬜ Partial (dead controls removed; full audit pending) |
+| 16 | Automated tests pass | ✅ Done (557/557) |
+| 17 | No unresolved critical security issues remain | ⬜ Partial (CSP/nonce fixed; dependency audit pending) |
+| 18 | Documentation reflects actual functionality | ⬜ Partial (core docs added; user guide expansion pending) |
+| 19 | CI/CD pipeline works | ⬜ Partial (workflows added; not yet run) |
+| 20 | VSIX package installs and activates successfully | ⬜ Partial (packaged; clean-install test pending) |
+| 21 | Release notes and versioning are prepared | ⬜ Partial (0.6.2/0.6.3 entries; final release pending) |
+
+**Gate decision:** the extension may proceed to alpha/beta release preparation once items 3, 8, 14, 15, 17, 18, 19 and 20 reach their target state.
