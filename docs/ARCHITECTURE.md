@@ -93,7 +93,7 @@ graph TD
 - `src/webview/components/challenges/` - Challenge explorer with the Phase 5 editor
 - `src/webview/components/practicals/` - Practical preparation, mock exams, viva practice
 - `src/webview/components/progress/` - Learning progress dashboard
-- `src/webview/components/ai/` - AI chat message renderer (markdown), conversation list, context panel, provider settings, mode selector, quick actions, question review, context publishers
+- `src/webview/components/ai/` - AI chat message renderer (markdown), conversation list, context panel, provider settings, mode selector, quick actions, question review, context publishers, practice tools (question generator, viva, learning plan) and the inline visualization assistant
 - `src/webview/services/aiContextRegistry.ts` - The learning context the pages publish and the assistant offers
 - `src/webview/hooks/` - useVisualization, usePlayback, usePractice, useAI
 - `src/webview/types/` - Webview message types

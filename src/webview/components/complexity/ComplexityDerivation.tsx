@@ -1,6 +1,6 @@
 import type { FunctionComponent } from 'react';
 import { Box, Flex, Text } from '../primitives';
-import { COLORS, SPACING, RADIUS, TYPOGRAPHY } from '../Theme';
+import { COLORS, SPACING, RADIUS, TYPOGRAPHY, STATUS_COLORS } from '../Theme';
 import type { ComplexityCase, ComplexityDerivation as Derivation } from '../../../core/complexity/types';
 
 interface ComplexityDerivationViewProps {
@@ -37,7 +37,7 @@ export const ComplexityDerivationView: FunctionComponent<ComplexityDerivationVie
         </Text>
         <Box
           style={{
-            backgroundColor: COLORS.accent + '22',
+            backgroundColor: STATUS_COLORS.accent + '22',
             color: COLORS.accent,
             border: `1px solid ${COLORS.accent}`,
             padding: '0.2rem 0.65rem',

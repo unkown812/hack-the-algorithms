@@ -52,6 +52,7 @@ export const aiApi = {
     sendAIMessage(AI_MESSAGES.GENERATE_VIVA, { question, conversationId }),
   generateQuestions: (request: unknown, conversationId?: string) =>
     sendAIMessage(AI_MESSAGES.GENERATE_QUESTIONS, { request, conversationId }),
+  getLearningAdvice: () => sendAIMessage(AI_MESSAGES.GET_LEARNING_ADVICE),
   getQuestionDrafts: () => sendAIMessage(AI_MESSAGES.GET_QUESTION_DRAFTS),
   reviewDraft: (draftId: string, action: 'approve' | 'reject', note?: string) =>
     sendAIMessage(AI_MESSAGES.REVIEW_QUESTION_DRAFT, { draftId, action, note }),

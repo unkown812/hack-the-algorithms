@@ -1,7 +1,7 @@
 import type { FunctionComponent } from 'react';
 import { useMemo, useState } from 'react';
 import { Box, Flex, Text, Button } from '../components/primitives';
-import { COLORS, SPACING, RADIUS, TYPOGRAPHY } from '../Theme';
+import { COLORS, SPACING, RADIUS, TYPOGRAPHY, STATUS_COLORS } from '../Theme';
 import type { Algorithm } from '../../core/algorithms';
 import { InputSizeTester as InputSizeTesterCore } from '../../core/complexity/input/InputSizeTester';
 import type { TestDataset } from '../../core/complexity/input/InputSizeTester';
@@ -167,7 +167,7 @@ export const ComplexityAnalyzerPage: FunctionComponent<ComplexityAnalyzerProps> 
         <Box
           style={{
             marginTop: SPACING.md,
-            backgroundColor: COLORS.error + '22',
+            backgroundColor: STATUS_COLORS.error + '22',
             border: `1px solid ${COLORS.error}`,
             borderRadius: RADIUS.md,
             padding: SPACING.md,

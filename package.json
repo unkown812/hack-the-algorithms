@@ -2,7 +2,7 @@
   "name": "hack-the-algorithms",
   "displayName": "Hack The Algorithms",
   "description": "An interactive algorithm learning and visualization companion for Visual Studio Code.",
-  "version": "0.6.0",
+  "version": "0.6.4",
   "author": "ukown812",
   "publisher": "ukown812",
   "repository": {
@@ -10,6 +10,11 @@
     "url": "https://github.com/ukown812/hack-the-algorithms.git"
   },
   "license": "MIT",
+  "icon": "media/icon.png",
+  "bugs": {
+    "url": "https://github.com/ukown812/hack-the-algorithms/issues"
+  },
+  "homepage": "https://github.com/ukown812/hack-the-algorithms#readme",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -31,7 +36,10 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onCommand:daa-companion.openDashboard",
-    "onCommand:daa-companion.openPractice"
+    "onCommand:daa-companion.openPractice",
+    "onCommand:daa-companion.openAIAssistant",
+    "onCommand:daa-companion.openOnboarding",
+    "onView:daa-companion.explorer"
   ],
   "contributes": {
     "commands": [
@@ -50,6 +58,10 @@
       {
         "command": "daa-companion.openAIAssistant",
         "title": "DAA Companion: AI Learning Assistant"
+      },
+      {
+        "command": "daa-companion.openOnboarding",
+        "title": "DAA Companion: Onboarding"
       },
       {
         "command": "daa-companion.ai.explainSelection",

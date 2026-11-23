@@ -28,7 +28,20 @@ implements vscode.TreeDataProvider<AlgorithmExplorerItem>, vscode.Disposable
     if (!element) {
       const categories = [...new Set(algorithms.map((a) => a.category))];
 
-      // The practice centre is the first entry of the activity bar view.
+      // The AI assistant and the practice centre are the first entries of the
+      // activity bar view — both are one click away.
+      const assistantItem = new AlgorithmExplorerItem(
+        'ai-assistant',
+        'AI Learning Assistant',
+        vscode.TreeItemCollapsibleState.None
+      );
+      assistantItem.iconPath = new vscode.ThemeIcon('comment-discussion');
+      assistantItem.tooltip = 'Ask about algorithms, code, complexity, visualization steps and exams';
+      assistantItem.command = {
+        command: 'daa-companion.openAIAssistant',
+        title: 'Open the AI learning assistant',
+      };
+
       const practiceItem = new AlgorithmExplorerItem(
         'practice-centre',
         'Practice Centre',
@@ -42,6 +55,7 @@ implements vscode.TreeDataProvider<AlgorithmExplorerItem>, vscode.Disposable
       };
 
       return [
+        assistantItem,
         practiceItem,
         ...categories.map(
           (category) =>

@@ -1,7 +1,7 @@
 import type { FunctionComponent } from 'react';
 import { useState } from 'react';
 import { Box, Text } from '../primitives';
-import { COLORS, SPACING, RADIUS, TYPOGRAPHY } from '../Theme';
+import { COLORS, SPACING, RADIUS, TYPOGRAPHY, STATUS_COLORS } from '../Theme';
 import { NOTATION_EXPLANATIONS, SPACE_COMPLEXITY_TOPICS, TIME_COMPLEXITY_TOPICS } from '../../../core/complexity/learning/ComplexityTopics';
 import type { ComplexityTopic } from '../../../core/complexity/learning/ComplexityTopics';
 
@@ -159,7 +159,7 @@ const TopicCard: FunctionComponent<{ topic: ComplexityTopic; isOpen: boolean; on
             </Box>
             <Box
               style={{
-                backgroundColor: COLORS.accent + '20',
+                backgroundColor: STATUS_COLORS.accent + '20',
                 borderLeft: `3px solid ${COLORS.accent}`,
                 borderRadius: RADIUS.sm,
                 padding: `${SPACING.sm} ${SPACING.md}`,

@@ -14,6 +14,8 @@ type Props = {
   onOpenPlayground: () => void;
   onOpenPractice: () => void;
   onOpenAIAssistant: () => void;
+  onSelectCategory(_categoryId: string): void;
+  onOpenOnboarding: () => void;
 };
 
 export const Dashboard = ({
@@ -23,6 +25,8 @@ export const Dashboard = ({
   onOpenPlayground,
   onOpenPractice,
   onOpenAIAssistant,
+  onSelectCategory,
+  onOpenOnboarding,
 }: Props) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -107,8 +111,8 @@ export const Dashboard = ({
           <Button variant="secondary" onClick={onOpenAIAssistant}>
             Ask the AI Assistant
           </Button>
-          <Button variant="secondary" onClick={onOpenLibrary}>
-            Study the C implementations
+          <Button variant="secondary" onClick={onOpenOnboarding}>
+            Take the Onboarding Tour
           </Button>
         </Flex>
       </Box>
@@ -130,7 +134,7 @@ export const Dashboard = ({
               name={cat.name}
               description={`Algorithms in the ${cat.name} category`}
               algorithmCount={cat.count}
-              onClick={() => onSelectAlgorithm(cat.id)}
+              onClick={() => onSelectCategory(cat.id)}
             />
           ))}
         </Flex>

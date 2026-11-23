@@ -527,4 +527,57 @@ describe('AI service', () => {
     expect(suggestions[0].text.toLowerCase()).toContain('merge sort');
     expect(suggestions.length).toBeGreaterThan(4);
   });
+
+  it('uses the follow-up questions of the feature that answered', () => {
+    const service = new AIService(() => undefined, () => config());
+
+    expect(
+      service.getSuggestions({ task: 'code-explanation' }).some((entry) =>
+        entry.text.includes('Walk me through')
+      )
+    ).toBe(true);
+    expect(
+      service.getSuggestions({ task: 'complexity' }).some((entry) =>
+        entry.text.toLowerCase().includes('recurrence')
+      )
+    ).toBe(true);
+    expect(
+      service.getSuggestions({ task: 'learning-advice' }).some((entry) =>
+        entry.text.toLowerCase().includes('roadmap')
+      )
+    ).toBe(true);
+  });
+
+  it('regenerates an answer without duplicating the question', async () => {
+    const provider = stubProvider();
+    const service = new AIService(() => ({ provider, apiKey: 'key' }), () => config());
+
+    const first = await service.ask({ question: 'Explain merge sort.' });
+    await service.ask({
+      question: 'Explain merge sort.',
+      conversationId: first.conversationId,
+      regenerate: true,
+    });
+
+    const messages = service.conversations.messages(first.conversationId);
+    expect(messages.filter((message) => message.role === 'user')).toHaveLength(1);
+    expect(messages[0].content).toBe('Explain merge sort.');
+    expect(messages[messages.length - 1].role).toBe('assistant');
+  });
+
+  it('reports when the attached context had to be shortened', async () => {
+    const provider = stubProvider();
+    const service = new AIService(
+      () => ({ provider, apiKey: 'key' }),
+      () => config({ maxContextCharacters: 500, allowExternalContext: true })
+    );
+
+    const result = await service.ask({
+      question: 'Explain this program.',
+      selection: { code: 'int main(void) { return 0; }\n'.repeat(80) },
+    });
+
+    expect(result.contextTruncated).toBe(true);
+    expect(result.context[0].content).toContain('shortened');
+  });
 });

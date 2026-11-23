@@ -102,6 +102,26 @@ export class AIConversationManager {
     return true;
   }
 
+  /**
+   * Removes the newest assistant answer.
+   * Used by "Regenerate": the question stays in the history, the old answer
+   * is replaced by the new one instead of being kept twice.
+   */
+  removeLastAssistant(conversationId: string): boolean {
+    const conversation = this.conversations.get(conversationId);
+    if (!conversation) {
+      return false;
+    }
+    for (let index = conversation.messages.length - 1; index >= 0; index -= 1) {
+      if (conversation.messages[index].role === 'assistant') {
+        conversation.messages.splice(index, 1);
+        conversation.updatedAt = Date.now();
+        return true;
+      }
+    }
+    return false;
+  }
+
   /** Removes a conversation. */
   remove(conversationId: string): boolean {
     return this.conversations.delete(conversationId);

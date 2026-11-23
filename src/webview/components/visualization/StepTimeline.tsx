@@ -1,6 +1,9 @@
 import type { FunctionComponent } from 'react';
 import { Box, Text } from '../primitives';
-import { COLORS, SPACING, RADIUS, TYPOGRAPHY } from '../Theme';
+import { COLORS, SPACING, RADIUS, TYPOGRAPHY, STATUS_COLORS } from '../Theme';
+
+/** Maximum number of steps rendered in the timeline; larger traces are windowed. */
+const TIMELINE_WINDOW = 30;
 
 type Props = {
   stepIndex: number;
@@ -13,7 +16,11 @@ export const StepTimeline: FunctionComponent<Props> = ({
   totalSteps,
   onStepClick,
 }) => {
-  const steps = Array.from({ length: totalSteps }, (_, i) => i);
+  const safeStepIndex = Math.max(0, Math.min(stepIndex, Math.max(0, totalSteps - 1)));
+  const startIndex = Math.max(0, Math.min(safeStepIndex - Math.floor((TIMELINE_WINDOW - 1) / 2), Math.max(0, totalSteps - TIMELINE_WINDOW)));
+  const endIndex = Math.min(totalSteps, startIndex + TIMELINE_WINDOW);
+  const visibleSteps = Array.from({ length: endIndex - startIndex }, (_, i) => startIndex + i);
+  const isWindowed = totalSteps > TIMELINE_WINDOW;
 
   return (
     <Box
@@ -40,9 +47,21 @@ export const StepTimeline: FunctionComponent<Props> = ({
           gap: 4,
         } as React.CSSProperties}
       >
-        {steps.map((i) => {
-          const isCurrent = i === stepIndex;
-          const isCompleted = i < stepIndex;
+        {isWindowed && (
+          <Text
+            as="p"
+            style={{
+              ...TYPOGRAPHY.small,
+              color: COLORS.textMuted,
+              margin: `0 0 ${SPACING.sm} 0`,
+            } as React.CSSProperties}
+          >
+            Showing steps {startIndex + 1}–{endIndex} of {totalSteps}.
+          </Text>
+        )}
+        {visibleSteps.map((i) => {
+          const isCurrent = i === safeStepIndex;
+          const isCompleted = i < safeStepIndex;
           return (
             <Box
               key={i}
@@ -50,7 +69,7 @@ export const StepTimeline: FunctionComponent<Props> = ({
                 padding: '0.5rem 0.75rem',
                 borderRadius: RADIUS.md,
                 backgroundColor: isCurrent
-                  ? COLORS.accent + '20'
+                  ? STATUS_COLORS.accent + '20'
                   : isCompleted
                     ? COLORS.surfaceElevated
                     : 'transparent',

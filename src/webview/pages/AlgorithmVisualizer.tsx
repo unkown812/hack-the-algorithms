@@ -1,6 +1,6 @@
 import { FunctionComponent, useState } from 'react';
 import { Box, Flex, Text, Button } from '../components/primitives';
-import { COLORS, SPACING, RADIUS, TYPOGRAPHY } from '../components/Theme';
+import { COLORS, SPACING, RADIUS, TYPOGRAPHY, STATUS_COLORS } from '../components/Theme';
 import type { Algorithm } from '../../core/algorithms';
 import {
   ArrayRenderer,
@@ -14,6 +14,7 @@ import {
 import { useVisualization } from '../hooks';
 import { visualizationEngine } from '../../core/visualization/generators';
 import { AIContextPublisher } from '../components/ai/AIContextPublisher';
+import { AIVisualizationAssistant } from '../components/ai/AIVisualizationAssistant';
 
 type Props = {
   algorithm: Algorithm | undefined;
@@ -21,9 +22,9 @@ type Props = {
 };
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  Beginner: COLORS.success,
-  Intermediate: COLORS.warning,
-  Advanced: COLORS.error,
+  Beginner: STATUS_COLORS.success,
+  Intermediate: STATUS_COLORS.warning,
+  Advanced: STATUS_COLORS.error,
 };
 
 export const AlgorithmVisualizer: FunctionComponent<Props> = ({
@@ -281,6 +282,21 @@ export const AlgorithmVisualizer: FunctionComponent<Props> = ({
           />
         </Box>
       )}
+
+      <AIVisualizationAssistant
+        algorithm={algorithm}
+        step={currentStep}
+        stepIndex={currentStepIndex}
+        totalSteps={totalSteps}
+        isPlaying={isPlaying}
+        onNext={nextStep}
+        onPrevious={previousStep}
+        onRestart={restart}
+        onFirst={() => jumpToStep(0)}
+        onLast={() => jumpToStep(totalSteps - 1)}
+        onPlay={play}
+        onPause={pause}
+      />
 
       {pseudocode && pseudocode.length > 0 && (
         <Box style={{ marginTop: SPACING.xl } as React.CSSProperties}>

@@ -7,18 +7,25 @@ import type { Algorithm } from '../../core/algorithms';
 
 type Props = {
   algorithms: Algorithm[];
+  initialCategory?: string;
   onSelectAlgorithm: (id: string) => void;
   onBack: () => void;
 };
 
 export const AlgorithmLibrary = ({
   algorithms,
+  initialCategory,
   onSelectAlgorithm,
   onBack,
 }: Props) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const filtered = algorithms.filter((algo) => {
+    if (initialCategory) {
+      if (algo.category.toLowerCase() !== initialCategory.toLowerCase()) {
+        return false;
+      }
+    }
     if (!searchQuery) {return true;}
     const q = searchQuery.toLowerCase();
     return (

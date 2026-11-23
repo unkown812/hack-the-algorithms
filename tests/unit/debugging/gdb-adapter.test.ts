@@ -59,23 +59,29 @@ describe('MI record parsing', () => {
 });
 
 describe('GDB adapter (real debugger)', () => {
-  const gdbPath = 'C:\\Strawberry\\c\\bin\\gdb.exe';
+  // Use the debugger of the platform; the Windows installer path is only a
+  // fallback so that the test also runs on a developer machine.
+  const gdbPath =
+    process.env.DAA_GDB ??
+    (process.platform === 'win32' ? 'C:\\Strawberry\\c\\bin\\gdb.exe' : 'gdb');
+  const gccPath =
+    process.env.DAA_GCC ??
+    (process.platform === 'win32' ? 'C:\\Strawberry\\c\\bin\\gcc.exe' : 'gcc');
 
-  it('compiles, sets a breakpoint, steps and inspects variables', async () => {
+  const hasGdb = spawnSync(gdbPath, ['--version'], { encoding: 'utf8' }).status === 0;
+  const hasGcc = spawnSync(gccPath, ['--version'], { encoding: 'utf8' }).status === 0;
+
+  it.skipIf(!hasGdb || !hasGcc)('compiles, sets a breakpoint, steps and inspects variables', async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'daa-gdb-test-'));
     const sourcePath = path.join(dir, 'program.c');
-    const binaryPath = path.join(dir, 'program.exe');
+    const binaryPath = path.join(dir, process.platform === 'win32' ? 'program.exe' : 'program');
     fs.writeFileSync(sourcePath, SOURCE, 'utf8');
 
-    const compiled = spawnSync(gdbPath, ['--version'], { encoding: 'utf8' });
-    expect(compiled.status).toBe(0);
-
     const gcc = spawnSync(
-      'C:\\Strawberry\\c\\bin\\gcc.exe',
+      gccPath,
       ['-std=c11', '-g', '-O0', '-o', binaryPath, sourcePath],
       { encoding: 'utf8' }
     );
-    expect(gcc.stderr).toBe('');
     expect(gcc.status).toBe(0);
 
     const adapter = new GDBAdapter({

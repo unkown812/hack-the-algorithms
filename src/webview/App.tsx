@@ -14,6 +14,8 @@ import { CodingChallengesPage } from './pages/CodingChallengesPage';
 import { PracticalPreparationPage } from './pages/PracticalPreparationPage';
 import { LearningProgressPage } from './pages/LearningProgressPage';
 import { AIAssistant } from './pages/AIAssistant';
+import { OnboardingPage, type OnboardingStepId } from './pages/OnboardingPage';
+import { AppHeader } from './components/AppHeader';
 import type { QuizConfig } from '../core/practice/types';
 import { postToExtension, onExtensionMessage } from './utils';
 import type { Algorithm } from '../core/algorithms';
@@ -32,7 +34,8 @@ type View =
   | 'challenges'
   | 'practicals'
   | 'progress'
-  | 'ai-assistant';
+  | 'ai-assistant'
+  | 'onboarding';
 
 export const App: FunctionComponent = () => {
   const [algorithms, setAlgorithms] = useState<Algorithm[]>([]);
@@ -40,12 +43,16 @@ export const App: FunctionComponent = () => {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<Algorithm | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [quizConfig, setQuizConfig] = useState<QuizConfig | undefined>(undefined);
+  const [libraryCategory, setLibraryCategory] = useState<string | undefined>(undefined);
   const [editorRequest, setEditorRequest] = useState<
     { action: string; code: string; fileName: string } | undefined
   >(undefined);
 
   useEffect(() => {
     postToExtension({ type: 'GET_ALGORITHMS' });
+    // The host uses this handshake to deliver deep links that were sent while
+    // the webview was still starting.
+    postToExtension({ type: 'DAA_WEBVIEW_READY' });
 
     const handler = (event: MessageEvent) => {
       const message = event.data as { type: string; payload?: unknown };
@@ -62,8 +69,26 @@ export const App: FunctionComponent = () => {
       }
       case 'OPEN_VIEW': {
         const payload = message.payload as { view?: string } | undefined;
-        if (payload?.view === 'practice' || payload?.view === 'ai-assistant') {
-          setView(payload.view);
+        const openedView = payload?.view;
+        const navigableViews = [
+          'dashboard',
+          'library',
+          'detail',
+          'visualizer',
+          'analyzer',
+          'performance',
+          'comparison',
+          'playground',
+          'practice',
+          'quiz',
+          'challenges',
+          'practicals',
+          'progress',
+          'ai-assistant',
+        ];
+        const target = navigableViews.find((candidate) => candidate === openedView);
+        if (target) {
+          setView(target as View);
         }
         break;
       }
@@ -103,6 +128,13 @@ export const App: FunctionComponent = () => {
   const handleOpenLibrary = () => {
     setView('library');
     setSelectedAlgorithm(undefined);
+    setLibraryCategory(undefined);
+  };
+
+  const handleSelectCategory = (categoryId: string): void => {
+    setSelectedAlgorithm(undefined);
+    setLibraryCategory(categoryId);
+    setView('library');
   };
 
   const handleBackToDashboard = () => {
@@ -165,6 +197,66 @@ export const App: FunctionComponent = () => {
     setView('ai-assistant');
   };
 
+  const openNav = (id: string): void => {
+    switch (id) {
+    case 'dashboard':
+      setView('dashboard');
+      setSelectedAlgorithm(undefined);
+      break;
+    case 'library':
+      handleOpenLibrary();
+      break;
+    case 'playground':
+      handleOpenPlayground();
+      break;
+    case 'practice':
+      handleOpenPractice();
+      break;
+    case 'assistant':
+      handleOpenAIAssistant();
+      break;
+    case 'progress':
+      handleOpenProgress();
+      break;
+    default:
+      break;
+    }
+  };
+
+  const handleOpenOnboarding = (): void => {
+    setView('onboarding');
+  };
+
+  const handleOnboardingNavigate = (step: OnboardingStepId): void => {
+    switch (step) {
+    case 'library':
+      handleOpenLibrary();
+      break;
+    case 'visualizer':
+      if (algorithms[0]) {
+        handleOpenVisualizer(algorithms[0]);
+      }
+      break;
+    case 'playground':
+      handleOpenPlayground();
+      break;
+    case 'analyzer':
+      if (algorithms[0]) {
+        handleOpenAnalyzer(algorithms[0]);
+      }
+      break;
+    case 'practice':
+      handleOpenPractice();
+      break;
+    case 'assistant':
+      handleOpenAIAssistant();
+      break;
+    case 'progress':
+      handleOpenProgress();
+      break;
+    }
+  };
+
   const handleBackToDetail = () => {
     setView('detail');
   };
@@ -192,6 +284,18 @@ export const App: FunctionComponent = () => {
 
   return (
     <Layout>
+      <AppHeader
+        items={[
+          { id: 'dashboard', label: 'Dashboard' },
+          { id: 'library', label: 'Library' },
+          { id: 'playground', label: 'Playground' },
+          { id: 'practice', label: 'Practice' },
+          { id: 'assistant', label: 'AI Assistant' },
+          { id: 'progress', label: 'Progress' },
+        ]}
+        current={view}
+        onNavigate={openNav}
+      />
       {view === 'dashboard' && (
         <Dashboard
           algorithms={algorithms}
@@ -200,11 +304,14 @@ export const App: FunctionComponent = () => {
           onOpenPlayground={() => handleOpenPlayground()}
           onOpenPractice={handleOpenPractice}
           onOpenAIAssistant={handleOpenAIAssistant}
+          onSelectCategory={handleSelectCategory}
+          onOpenOnboarding={handleOpenOnboarding}
         />
       )}
       {view === 'library' && (
         <AlgorithmLibrary
           algorithms={algorithms}
+          initialCategory={libraryCategory}
           onSelectAlgorithm={handleSelectAlgorithm}
           onBack={handleBackToDashboard}
         />
@@ -277,6 +384,12 @@ export const App: FunctionComponent = () => {
           onBack={handleBackToDashboard}
           editorRequest={editorRequest}
           onEditorRequestHandled={() => setEditorRequest(undefined)}
+        />
+      )}
+      {view === 'onboarding' && (
+        <OnboardingPage
+          onNavigate={handleOnboardingNavigate}
+          onBack={handleBackToDashboard}
         />
       )}
     </Layout>

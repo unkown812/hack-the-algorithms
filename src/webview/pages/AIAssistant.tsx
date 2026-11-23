@@ -15,6 +15,11 @@ import {
   AIQuickActions,
 } from '../components/ai/AIProviderSettings';
 import { AIQuestionReview } from '../components/ai/AIQuestionReview';
+import {
+  AIQuestionGeneratorForm,
+  AIVivaPrep,
+  AILearningPlan,
+} from '../components/ai/AIPracticeTools';
 import { aiContextRegistry, type PublishedContext } from '../services/aiContextRegistry';
 import type {
   AIConversation,
@@ -23,14 +28,30 @@ import type {
   AIProviderConfig,
   AIProviderStatus,
   AIQuestionDraft,
+  AIQuestionRequest,
   ExplanationMode,
 } from '../../core/ai/types';
 import type { ContextSelection } from '../../core/ai/AIContextBuilder';
+import type { Recommendation } from '../../core/ai/features/LearningAdvisor';
 
 interface ContextDraft {
   items: AIContextItem[];
   /** The structured selection the host rebuilds the context from. */
   selection: ContextSelection;
+}
+
+interface AskDraft {
+  question: string;
+  task?: string;
+  selection: ContextSelection;
+  includeProgress: boolean;
+  mode: ExplanationMode;
+}
+
+interface LearningPlanView {
+  summary: string;
+  recommendations: Recommendation[];
+  roadmap: Recommendation[];
 }
 
 interface AIAssistantProps {
@@ -88,7 +109,13 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
   /** The drafts of the review workflow. */
   const [drafts, setDrafts] = useState<AIQuestionDraft[]>([]);
   const [showReview, setShowReview] = useState(false);
+  const [showTools, setShowTools] = useState(false);
   const [rejectedDrafts, setRejectedDrafts] = useState<Array<{ title: string; issues: string[] }>>([]);
+  /** The request of the newest answer — used by "Regenerate". */
+  const [lastAsk, setLastAsk] = useState<AskDraft | null>(null);
+  /** The locally computed learning plan. */
+  const [learningPlan, setLearningPlan] = useState<LearningPlanView | undefined>(undefined);
+  const [planLoading, setPlanLoading] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -149,10 +176,33 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
         setRequestId(undefined);
         setConversation({ id: String(payload.conversationId), messages: [], createdAt: 0, updatedAt: 0, title: '', mode } as AIConversation);
         const response = payload.response as { content: string; sources?: unknown[]; fromKnowledgeBase?: boolean; provider: string; model: string } | undefined;
-        if (response) {
-          setMessages((previous) => [
-            ...previous,
-            {
+
+        // Notices about the context are shown before the answer, so the
+        // answer stays the newest message and keeps its "Regenerate" action.
+        const notices: AIMessageModel[] = [];
+        if (payload.contextWithheld === true) {
+          notices.push({
+            id: `notice-${Date.now()}`,
+            role: 'assistant',
+            content: '_Notice: the context you attached was not sent — the provider is external and the consent for sharing context is off. The answer below is based on the question and the bundled material._',
+            createdAt: Date.now(),
+            mode,
+          });
+        }
+        if (payload.contextTruncated === true) {
+          notices.push({
+            id: `notice-truncated-${Date.now()}`,
+            role: 'assistant',
+            content: '_Notice: the attached context was longer than the configured budget, so it was shortened before it was sent. Remove an item or raise the context limit in the settings._',
+            createdAt: Date.now(),
+            mode,
+          });
+        }
+
+        setMessages((previous) => {
+          const next = [...previous, ...notices];
+          if (response) {
+            next.push({
               id: `assistant-${Date.now()}`,
               role: 'assistant',
               content: response.content,
@@ -160,23 +210,13 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
               mode,
               sources: (response.sources ?? []) as AIMessageModel['sources'],
               fromKnowledgeBase: response.fromKnowledgeBase,
-            },
-          ]);
-        }
+            });
+          }
+          return next;
+        });
+
         // The streamed text is now part of the final message.
         setStreamingText('');
-        if (payload.contextWithheld === true) {
-          setMessages((previous) => [
-            ...previous,
-            {
-              id: `notice-${Date.now()}`,
-              role: 'assistant',
-              content: '_Notice: the context you attached was not sent — the provider is external and the consent for sharing context is off. The answer below is based on the question and the bundled material._',
-              createdAt: Date.now(),
-              mode,
-            },
-          ]);
-        }
         if (Array.isArray(payload.suggestions)) {
           setSuggestions(payload.suggestions as Array<{ id: string; text: string }>);
         }
@@ -186,6 +226,7 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
       case 'AI_ERROR': {
         setBusy(false);
         setRequestId(undefined);
+        setPlanLoading(false);
         setStreamingText('');
         const text = String(payload.message ?? 'The request failed.');
         setMessages((previous) => [
@@ -199,6 +240,15 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
             error: true,
           },
         ]);
+        break;
+      }
+      case 'AI_LEARNING_ADVICE': {
+        setLearningPlan({
+          summary: String(payload.summary ?? ''),
+          recommendations: (payload.recommendations as Recommendation[]) ?? [],
+          roadmap: (payload.roadmap as Recommendation[]) ?? [],
+        });
+        setPlanLoading(false);
         break;
       }
       case 'AI_CONVERSATIONS': {
@@ -291,34 +341,78 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length, busy]);
 
+  /** Sends a request to the host. The question bubble is optional so that a
+   * regenerated answer does not repeat the student's question. */
+  const runAsk = (
+    request: AskDraft,
+    addQuestionBubble: boolean,
+    regenerateAnswer = false
+  ): void => {
+    if (busy) {
+      return;
+    }
+
+    if (addQuestionBubble) {
+      setMessages((previous) => [
+        ...previous,
+        {
+          id: `user-${Date.now()}`,
+          role: 'user',
+          content: request.question,
+          createdAt: Date.now(),
+          mode: request.mode,
+        },
+      ]);
+    }
+
+    setDraft('');
+    setSuggestions([]);
+    setStreamingText('');
+    setLastAsk(request);
+
+    aiApi.ask({
+      question: request.question,
+      mode: request.mode,
+      task: request.task,
+      conversationId: conversation?.id,
+      requestId: `req-${Date.now()}`,
+      selection: request.selection,
+      includeProgress: request.includeProgress,
+      regenerate: regenerateAnswer,
+    });
+  };
+
   const send = (question: string, task?: string, extraSelection?: ContextSelection): void => {
     const trimmed = question.trim();
     if (!trimmed || busy) {
       return;
     }
 
-    setMessages((previous) => [
-      ...previous,
-      { id: `user-${Date.now()}`, role: 'user', content: trimmed, createdAt: Date.now(), mode },
-    ]);
-    setDraft('');
-    setSuggestions([]);
-    setStreamingText('');
-
     const selection: ContextSelection = { ...contextDraft.selection, ...extraSelection };
 
     // The attached context items are sent as they are.
     selection.items = contextDraft.items;
 
-    aiApi.ask({
-      question: trimmed,
-      mode,
-      task,
-      conversationId: conversation?.id,
-      requestId: `req-${Date.now()}`,
-      selection,
-      includeProgress,
+    runAsk({ question: trimmed, task, selection, includeProgress, mode }, true);
+  };
+
+  /** Repeats the newest request and replaces its answer. */
+  const regenerate = (): void => {
+    if (!lastAsk || busy) {
+      return;
+    }
+
+    setMessages((previous) => {
+      const next = [...previous];
+      // Remove the old answer together with the notices that belong to it.
+      // The loop stops at the student's question, which stays in the history.
+      while (next.length > 0 && next[next.length - 1].role === 'assistant') {
+        next.pop();
+      }
+      return next;
     });
+
+    runAsk(lastAsk, false, true);
   };
 
   /** Attaches an item of the available context. */
@@ -406,6 +500,9 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
           </Box>
         </Flex>
         <Flex gap={SPACING.sm}>
+          <Button variant="secondary" size="sm" onClick={() => setShowTools((value) => !value)}>
+            Practice tools
+          </Button>
           <Button variant="secondary" size="sm" onClick={() => setShowReview((value) => !value)}>
             Review questions{drafts.filter((draft) => draft.status === 'pending').length > 0
               ? ` (${drafts.filter((draft) => draft.status === 'pending').length})`
@@ -443,6 +540,26 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
           }}
           onClose={() => setShowSettings(false)}
         />
+      )}
+
+      {showTools && (
+        <Box>
+          <AIQuestionGeneratorForm
+            disabled={busy}
+            onGenerate={(request: AIQuestionRequest) =>
+              aiApi.generateQuestions(request, conversation?.id)
+            }
+          />
+          <AIVivaPrep disabled={busy} onGenerate={(question) => send(question, 'viva')} />
+          <AILearningPlan
+            plan={learningPlan}
+            disabled={planLoading}
+            onLoad={() => {
+              setPlanLoading(true);
+              aiApi.getLearningAdvice();
+            }}
+          />
+        </Box>
       )}
 
       {issues.length > 0 && (
@@ -503,8 +620,19 @@ export const AIAssistant: FunctionComponent<AIAssistantProps> = ({
           )}
 
           <Box>
-            {messages.map((message) => (
-              <AIMessageView key={message.id} message={message} />
+            {messages.map((message, index) => (
+              <AIMessageView
+                key={message.id}
+                message={message}
+                onRegenerate={
+                  !busy &&
+                  index === messages.length - 1 &&
+                  message.role === 'assistant' &&
+                  !message.error
+                    ? regenerate
+                    : undefined
+                }
+              />
             ))}
             {busy && streamingText && (
               <Box style={{ marginBottom: SPACING.md, paddingLeft: 40 }}>

@@ -1,7 +1,7 @@
 import type { FunctionComponent } from 'react';
 import { useState } from 'react';
 import { Box, Flex, Text, Button } from '../primitives';
-import { COLORS, SPACING, RADIUS, TYPOGRAPHY } from '../Theme';
+import { COLORS, SPACING, RADIUS, TYPOGRAPHY, STATUS_COLORS } from '../Theme';
 import type { OperationMetrics } from '../../../core/complexity/types/OperationMetrics';
 import type { CountingConvention } from '../../../core/complexity/counters/engine/CountingConventions';
 
@@ -85,7 +85,7 @@ export const OperationMetricsDisplay: FunctionComponent<OperationMetricsProps> =
           <Box
             key={item.label}
             style={{
-              backgroundColor: item.key === 'totalOperations' ? COLORS.accent + '20' : COLORS.surfaceElevated,
+              backgroundColor: item.key === 'totalOperations' ? STATUS_COLORS.accent + '20' : COLORS.surfaceElevated,
               borderRadius: RADIUS.md,
               padding: SPACING.md,
               textAlign: 'center',

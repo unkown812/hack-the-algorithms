@@ -110,6 +110,16 @@
 - [x] Automatic context binding from the visualizer, the playground and the analyzer
 - [x] Review workflow for generated questions with approval, rejection and validation
 
+## Phase 7.2: Phase 7 Completion Pass (Complete)
+
+- [x] AI assistant entry in the Activity Bar next to the Practice Centre
+- [x] Practice tools panel: question generator form, viva preparation and mock exam entry points
+- [x] Personalised learning plan computed locally from the Phase 6 progress data (recommendations + prerequisite roadmap)
+- [x] Regenerate-answer action and task-specific follow-up questions
+- [x] Inline natural-language assistant in the visualizer: explains the current step and drives the existing playback controls
+- [x] Context-budget truncation is reported to the student; context-message and context-character settings exposed in the UI
+- [x] Portable real-debugger test (Linux/macOS/Windows) instead of a hard-coded Windows path
+
 ## Phase 8: Practice & Assessment Extensions
 
 - [ ] Interactive quizzes and assessments with a larger question bank

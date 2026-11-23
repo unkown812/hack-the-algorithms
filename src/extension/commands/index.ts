@@ -1,9 +1,11 @@
 import * as vscode from 'vscode';
+import { randomUUID } from 'crypto';
 import {
   AI_EDITOR_COMMANDS,
   AI_MESSAGES,
   COMMAND_OPEN_AI_ASSISTANT,
   COMMAND_OPEN_DASHBOARD,
+  COMMAND_OPEN_ONBOARDING,
   COMMAND_OPEN_ALGORITHM_LIBRARY,
   COMMAND_OPEN_PRACTICE,
   PLAYGROUND_MESSAGES,
@@ -85,9 +87,15 @@ const AI_MESSAGE_SET = new Set<string>([
   AI_MESSAGES.SET_CONVERSATION_MODE,
   AI_MESSAGES.GENERATE_VIVA,
   AI_MESSAGES.GENERATE_QUESTIONS,
+  AI_MESSAGES.GET_LEARNING_ADVICE,
 ]);
 
 let dashboardPanel: vscode.WebviewPanel | undefined = undefined;
+/**
+ * Messages that are sent while the webview of a freshly created dashboard
+ * panel is not ready yet. They are flushed once the webview signals readiness.
+ */
+let pendingWebviewMessages: Array<{ type: string; payload?: unknown }> = [];
 
 function getWebviewOptions(
   context: vscode.ExtensionContext
@@ -96,6 +104,8 @@ function getWebviewOptions(
     enableScripts: true,
     localResourceRoots: [
       vscode.Uri.joinPath(context.extensionUri, 'dist'),
+      vscode.Uri.joinPath(context.extensionUri, 'media'),
+      vscode.Uri.joinPath(context.extensionUri, 'resources'),
     ],
   };
 }
@@ -131,7 +141,16 @@ async function exportReport(
   await vscode.window.showInformationMessage(`Report exported: ${target.fsPath}`);
 }
 
-function openDashboard(context: vscode.ExtensionContext, openView?: string): void {
+function postDashboardMessage(message: { type: string; payload?: unknown }): void {
+  const panel = dashboardPanel;
+  if (!panel) {
+    pendingWebviewMessages.push(message);
+    return;
+  }
+  void panel.webview.postMessage(message);
+}
+
+async function openDashboard(context: vscode.ExtensionContext, openView?: string): Promise<void> {
   const column = vscode.ViewColumn.One;
 
   // The reviewed questions of the student are shared by the assistant and
@@ -141,7 +160,7 @@ function openDashboard(context: vscode.ExtensionContext, openView?: string): voi
   if (dashboardPanel) {
     dashboardPanel.reveal(column);
     if (openView) {
-      void dashboardPanel.webview.postMessage({ type: 'OPEN_VIEW', payload: { view: openView } });
+      postDashboardMessage({ type: 'OPEN_VIEW', payload: { view: openView } });
     }
     return;
   }
@@ -155,21 +174,41 @@ function openDashboard(context: vscode.ExtensionContext, openView?: string): voi
 
   dashboardPanel.webview.html = getWebviewContent(context, dashboardPanel);
 
+  const webviewReady = new Promise<void>((resolve) => {
+    const disposable = dashboardPanel!.webview.onDidReceiveMessage((message) => {
+      if (message.type === 'DAA_WEBVIEW_READY') {
+        disposable.dispose();
+        resolve();
+      }
+    });
+    context.subscriptions.push(disposable);
+  });
+
+  void webviewReady.then(() => {
+    const pending = pendingWebviewMessages;
+    pendingWebviewMessages = [];
+    for (const message of pending) {
+      void dashboardPanel?.webview.postMessage(message);
+    }
+  });
+
+  // Deep links sent to a freshly created panel are queued until the webview
+  // signals that it is ready to receive messages.
   if (openView) {
-    void dashboardPanel.webview.postMessage({ type: 'OPEN_VIEW', payload: { view: openView } });
+    pendingWebviewMessages.push({ type: 'OPEN_VIEW', payload: { view: openView } });
   }
 
   const playground = new PlaygroundMessageHandler(context, (message) => {
-    dashboardPanel?.webview.postMessage(message);
+    postDashboardMessage(message);
   });
   context.subscriptions.push({ dispose: () => void playground.dispose() });
 
   const practice = new PracticeMessageHandler(context, (message) => {
-    dashboardPanel?.webview.postMessage(message);
+    postDashboardMessage(message);
   }, () => approvedQuestions.getQuestions());
 
   const assistant = new AIMessageHandler(context, (message) => {
-    dashboardPanel?.webview.postMessage(message);
+    postDashboardMessage(message);
   }, approvedQuestions);
 
   dashboardPanel.webview.onDidReceiveMessage(
@@ -177,7 +216,7 @@ function openDashboard(context: vscode.ExtensionContext, openView?: string): voi
       switch (message.type) {
       case 'GET_ALGORITHMS': {
         const algorithms = getAllAlgorithms();
-        dashboardPanel?.webview.postMessage({
+        postDashboardMessage({
           type: 'ALGORITHMS_DATA',
           payload: algorithms,
         });
@@ -188,7 +227,7 @@ function openDashboard(context: vscode.ExtensionContext, openView?: string): voi
             algorithmId: string;
           };
         const algo = getAlgorithmById(algorithmId);
-        dashboardPanel?.webview.postMessage({
+        postDashboardMessage({
           type: 'ALGORITHM_DETAIL',
           payload: algo,
         });
@@ -235,15 +274,23 @@ function getWebviewContent(
   panel: vscode.WebviewPanel
 ): string {
   const webviewUri = getWebviewUri(context, panel);
-  const nonce = 'daa-companion-nonce';
+  const nonce = randomUUID();
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src 'self' data:;">
   <title>DAA Learning Companion</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--vscode-editor-background, #0f172a);
+    }
+  </style>
 </head>
 <body>
   <div id="root"></div>
@@ -255,22 +302,37 @@ function getWebviewContent(
 export function registerCommands(context: vscode.ExtensionContext): void {
   const openDashboardCommand = vscode.commands.registerCommand(
     COMMAND_OPEN_DASHBOARD,
-    () => openDashboard(context)
+    async () => {
+      await openDashboard(context);
+    }
   );
 
   const openAlgorithmLibraryCommand = vscode.commands.registerCommand(
     COMMAND_OPEN_ALGORITHM_LIBRARY,
-    () => openDashboard(context)
+    async () => {
+      await openDashboard(context, 'library');
+    }
   );
 
   const openPracticeCommand = vscode.commands.registerCommand(
     COMMAND_OPEN_PRACTICE,
-    () => openDashboard(context, 'practice')
+    async () => {
+      await openDashboard(context, 'practice');
+    }
   );
 
   const openAIAssistantCommand = vscode.commands.registerCommand(
     COMMAND_OPEN_AI_ASSISTANT,
-    () => openDashboard(context, 'ai-assistant')
+    async () => {
+      await openDashboard(context, 'ai-assistant');
+    }
+  );
+
+  const openOnboardingCommand = vscode.commands.registerCommand(
+    COMMAND_OPEN_ONBOARDING,
+    async () => {
+      await openDashboard(context, 'onboarding');
+    }
   );
 
   /**
@@ -300,10 +362,11 @@ export function registerCommands(context: vscode.ExtensionContext): void {
         );
         return;
       }
-      openDashboard(context, 'ai-assistant');
-      void dashboardPanel?.webview.postMessage({
-        type: AI_MESSAGES.AI_EDITOR_REQUEST,
-        payload: { ...spec, ...selection },
+      openDashboard(context, 'ai-assistant').then(() => {
+        postDashboardMessage({
+          type: AI_MESSAGES.AI_EDITOR_REQUEST,
+          payload: { ...spec, ...selection },
+        });
       });
     })
   );
@@ -313,6 +376,7 @@ export function registerCommands(context: vscode.ExtensionContext): void {
     openAlgorithmLibraryCommand,
     openPracticeCommand,
     openAIAssistantCommand,
+    openOnboardingCommand,
     ...editorCommands
   );
 }

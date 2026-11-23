@@ -1,6 +1,7 @@
 import type { FunctionComponent, ReactNode } from 'react';
 import { Box, Flex, Text, Button } from '../primitives';
 import { COLORS, SPACING, RADIUS, TYPOGRAPHY } from '../Theme';
+import { tokenizeC, type TokenType } from '../playground/cSyntax';
 
 /**
  * A small markdown renderer for AI answers.
@@ -169,11 +170,29 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
   return nodes;
 }
 
+/** The colours of the C token classes in an answer. */
+const CODE_COLORS: Record<TokenType, string> = {
+  keyword: '#c792ea',
+  type: '#82aaff',
+  number: '#f78c6c',
+  string: '#c3e88d',
+  char: '#c3e88d',
+  comment: '#7f8c98',
+  preprocessor: '#ffcb6b',
+  function: '#82aaff',
+  operator: '#89ddff',
+  plain: '#e2e8f0',
+};
+
 /** Renders one fenced code block with a copy button. */
 const CodeBlock: FunctionComponent<{ code: string; language: string }> = ({ code, language }) => {
   const handleCopy = () => {
     void navigator.clipboard?.writeText(code);
   };
+
+  // C is the primary language of the course, so its answers are highlighted
+  // with the same tokenizer as the playground editor.
+  const isC = /^(c|h|cpp|c\+\+|hpp)$/i.test(language.trim());
 
   return (
     <Box
@@ -212,7 +231,13 @@ const CodeBlock: FunctionComponent<{ code: string; language: string }> = ({ code
           margin: 0,
         } as React.CSSProperties}
       >
-        {code}
+        {isC
+          ? tokenizeC(code).map((token, index) => (
+            <span key={index} style={{ color: CODE_COLORS[token.type] }}>
+              {token.text}
+            </span>
+          ))
+          : code}
       </Box>
     </Box>
   );

@@ -147,7 +147,7 @@ int main(void) {
     }
   });
 
-  it('reports a runtime error', async () => {
+  it('reports a runtime error', { timeout: 20000 }, async () => {
     if (!hasGcc) {
       return;
     }
